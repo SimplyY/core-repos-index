@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yuwei · AI Coding &amp; Build</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 16px; -webkit-text-size-adjust: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: #fdfaf6;
+    color: #3a3226;
+    line-height: 1.75;
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 24px 20px 60px;
+  }
+  header {
+    text-align: center;
+    padding: 40px 0 32px;
+  }
+  header h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: #2c2416;
+  }
+  header .tagline {
+    margin-top: 8px;
+    font-size: 0.95rem;
+    color: #8b7355;
+  }
+  section {
+    margin-bottom: 40px;
+  }
+  section h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #8b7355;
+    letter-spacing: 0.06em;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e8ddd0;
+  }
+  .intro p {
+    font-size: 0.95rem;
+    color: #5a4e3c;
+    margin-bottom: 10px;
+  }
+  .framework-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .framework-card {
+    background: #fff;
+    border: 1px solid #e8ddd0;
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .framework-card .label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #a68a6b;
+    letter-spacing: 0.08em;
+  }
+  .framework-card .title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #2c2416;
+    margin: 4px 0;
+  }
+  .framework-card .desc {
+    font-size: 0.8rem;
+    color: #8b7b6b;
+    line-height: 1.55;
+  }
+  .project {
+    background: #fff;
+    border: 1px solid #e8ddd0;
+    border-radius: 8px;
+    padding: 18px 16px;
+    margin-bottom: 12px;
+  }
+  .project-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .project-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+  .project-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #2c2416;
+  }
+  .project-link {
+    font-size: 0.78rem;
+    color: #8b7355;
+    text-decoration: none;
+    margin-left: auto;
+  }
+  .project-link:hover { text-decoration: underline; }
+  .project-desc {
+    margin-top: 8px;
+    font-size: 0.85rem;
+    color: #6b5e4f;
+    line-height: 1.6;
+  }
+  .project-tags {
+    margin-top: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .project-tags span {
+    font-size: 0.7rem;
+    color: #a68a6b;
+    background: #f5efe5;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+  .directions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .direction {
+    background: #fff;
+    border: 1px solid #e8ddd0;
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .direction .dir-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #2c2416;
+  }
+  .direction .dir-desc {
+    margin-top: 4px;
+    font-size: 0.8rem;
+    color: #8b7b6b;
+    line-height: 1.55;
+  }
+  .quote {
+    text-align: center;
+    padding: 24px 0 8px;
+    font-size: 0.9rem;
+    color: #a68a6b;
+    font-style: italic;
+  }
+  footer {
+    text-align: center;
+    padding-top: 24px;
+    font-size: 0.75rem;
+    color: #c4b5a5;
+  }
+  footer a {
+    color: #a68a6b;
+    text-decoration: none;
+  }
+  footer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Yuwei</h1>
+  <p class="tagline">读书人 · AI Coding Builder · 探索小而美</p>
+</header>
+<section>
+  <h2>关于我</h2>
+  <div class="intro">
+    <p>我是一个会写古诗的读书人，也是在投资、教育与 AI 时代中寻找小而美事业的探索者。</p>
+    <p>2017 年起在杭州、武汉做过工程师和架构师，目前在 gap 中，用 AI Coding 构建自己的数字工具箱。</p>
+  </div>
+</section>
+<section>
+  <h2>道 · 法 · 术 · 器</h2>
+  <div class="framework-grid">
+    <div class="framework-card">
+      <div class="label">道</div>
+      <div class="title">方向与本质</div>
+      <div class="desc">读书人、诗人、助有缘人。原子为基，比特为网，向量为剑。</div>
+    </div>
+    <div class="framework-card">
+      <div class="label">法</div>
+      <div class="title">认知框架</div>
+      <div class="desc">投资观、教育观、AI 观、创业观。判断力比信息更稀缺。</div>
+    </div>
+    <div class="framework-card">
+      <div class="label">术</div>
+      <div class="title">方法执行</div>
+      <div class="desc">Prompt 工程、复盘模板、自动化工作流。AI 是剑，不是茧。</div>
+    </div>
+    <div class="framework-card">
+      <div class="label">器</div>
+      <div class="title">工具实现</div>
+      <div class="desc">Codex CLI、飞书多维表格、lark-cli、静态站点。</div>
+    </div>
+  </div>
+</section>
+<section>
+  <h2>核心 Build</h2>
+  <div class="project">
+    <div class="project-top">
+      <div class="project-icon" style="background:#f0ebe3;">🧠</div>
+      <div class="project-name">Learn-X</div>
+      <a class="project-link" href="https://github.com/yuwei-zh/learn-x" target="_blank">GitHub</a>
+    </div>
+    <div class="project-desc">个人认知进化系统。以「道」校准方向，以「法」形成判断，以「术」推动行动，以「器」降低成本。周度/月度/年度复盘闭环。</div>
+    <div class="project-tags"><span>认知系统</span><span>Chat Pack</span><span>飞书</span><span>Codex</span></div>
+  </div>
+  <div class="project">
+    <div class="project-top">
+      <div class="project-icon" style="background:#f0ebe3;">📚</div>
+      <div class="project-name">Research-X</div>
+      <a class="project-link" href="https://github.com/yuwei-zh/research-x" target="_blank">GitHub</a>
+    </div>
+    <div class="project-desc">个人主题研究院。处理书籍、播客和长文，转化为可长期维护的研究资产。飞书协作 + 本地归档。</div>
+    <div class="project-tags"><span>研究</span><span>飞书多维表格</span><span>Worker</span></div>
+  </div>
+  <div class="project">
+    <div class="project-top">
+      <div class="project-icon" style="background:#f0ebe3;">⚖️</div>
+      <div class="project-name">Invest-X</div>
+      <a class="project-link" href="https://github.com/yuwei-zh/invest-x" target="_blank">GitHub</a>
+    </div>
+    <div class="project-desc">只读投资月记生成器。从飞书多维表格读取资产配置和操作记录，生成月度事实底稿与认知复盘输入。</div>
+    <div class="project-tags"><span>投资</span><span>飞书</span><span>月记</span></div>
+  </div>
+  <div class="project">
+    <div class="project-top">
+      <div class="project-icon" style="background:#f0ebe3;">🏛️</div>
+      <div class="project-name">Fakao</div>
+      <a class="project-link" href="https://github.com/yuwei-zh/fakao" target="_blank">GitHub</a>
+    </div>
+    <div class="project-desc">觉晓法考错题自动化。PDF 导出 → 文本提取 → 飞书多维表格 → 知识点聚类 → 间隔复习队列。完整复盘闭环。</div>
+    <div class="project-tags"><span>法考</span><span>错题</span><span>间隔复习</span><span>飞书</span></div>
+  </div>
+  <div class="project">
+    <div class="project-top">
+      <div class="project-icon" style="background:#f0ebe3;">🎮</div>
+      <div class="project-name">Game-X</div>
+      <a class="project-link" href="https://github.com/yuwei-zh/game-x" target="_blank">GitHub</a>
+    </div>
+    <div class="project-desc">和孩子一起做游戏。把学生的想法快速做成浏览器 Demo，在试玩中学习策略、取舍和复盘。</div>
+    <div class="project-tags"><span>教育</span><span>游戏</span><span>HTML5</span></div>
+  </div>
+  <div class="project">
+    <div class="project-top">
+      <div class="project-icon" style="background:#f0ebe3;">💪</div>
+      <div class="project-name">Health-X</div>
+      <a class="project-link" href="https://github.com/yuwei-zh/health-x" target="_blank">GitHub</a>
+    </div>
+    <div class="project-desc">个人健康数据仓库。处理小米运动健康周报，跨表评分，写入飞书多维表格，生成健康趋势提示。</div>
+    <div class="project-tags"><span>健康</span><span>数据</span><span>飞书</span></div>
+  </div>
+  <div class="project">
+    <div class="project-top">
+      <div class="project-icon" style="background:#f0ebe3;">🔗</div>
+      <div class="project-name">Lark Channel Bridge</div>
+      <a class="project-link" href="https://github.com/yuwei-zh/lark-channel-bridge" target="_blank">GitHub</a>
+    </div>
+    <div class="project-desc">飞书与 Codex CLI 的桥接层。让飞书消息直接驱动本地 AI Agent，实现群聊内自动化触发与多 Bot 协作。</div>
+    <div class="project-tags"><span>飞书</span><span>Codex</span><span>Bot</span><span>自动化</span></div>
+  </div>
+</section>
+<section>
+  <h2>当前探索</h2>
+  <div class="directions">
+    <div class="direction">
+      <div class="dir-title">AI Coding 生产力</div>
+      <div class="dir-desc">用 Codex CLI + 飞书生态构建个人数字工具箱，让 AI 从聊天助手变成真正能执行、能沉淀、能复用的 Build 伙伴。</div>
+    </div>
+    <div class="direction">
+      <div class="dir-title">教育与游戏</div>
+      <div class="dir-desc">和孩子一起设计游戏，在试玩中学习策略思维。探索 AI 辅助的个性化教育路径。</div>
+    </div>
+    <div class="direction">
+      <div class="dir-title">价值投资</div>
+      <div class="dir-desc">长期价值投资实践，用系统化工具辅助复盘，而非替代判断。</div>
+    </div>
+    <div class="direction">
+      <div class="dir-title">AI 时代人何以自处</div>
+      <div class="dir-desc">AI 可以放大知识与效率，但不能替代身体、关系、选择与真实行动。守住主体性，让 AI 成为剑而不是茧。</div>
+    </div>
+  </div>
+</section>
+<div class="quote">「着力即差」—— 苏轼</div>
+<footer>
+  <p>Built with AI · <a href="https://github.com/yuwei-zh" target="_blank">GitHub</a></p>
+</footer>
+</body>
+</html>

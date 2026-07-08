@@ -1,4 +1,4 @@
-<!-- build: 917ea85 -->
+<!-- build: b2f3a01 -->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -29,27 +29,19 @@
   .framework-card .label { font-size: 0.75rem; font-weight: 600; color: #a68a6b; letter-spacing: 0.08em; }
   .framework-card .title { font-size: 1.05rem; font-weight: 700; color: #2c2416; margin: 4px 0; }
   .framework-card .desc { font-size: 0.8rem; color: #8b7b6b; line-height: 1.55; }
-  .project { background: #fff; border: 1px solid #e8ddd0; border-radius: 8px; margin-bottom: 12px; overflow: hidden; }
-  .project[open] { border-color: #c4a97d; }
-  .project summary { list-style: none; cursor: pointer; padding: 16px; display: flex; align-items: center; gap: 10px; }
-  .project summary::-webkit-details-marker { display: none; }
-  .project summary::marker { display: none; content: ""; }
-  .project summary .expand-icon { margin-left: auto; font-size: 0.7rem; color: #c4b5a5; transition: transform 0.2s; flex-shrink: 0; }
-  .project[open] summary .expand-icon { transform: rotate(180deg); }
+
+  /* 项目卡片 */
+  .project-card { background: #fff; border: 1px solid #e8ddd0; border-radius: 8px; margin-bottom: 12px; padding: 14px 16px; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; }
+  .project-card:hover { border-color: #c4a97d; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+  .project-card:active { background: #faf7f2; }
   .project-highlight { border-left: 3px solid #c4a97d; }
-  .project-top { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+  .project-top { display: flex; align-items: center; gap: 10px; }
   .project-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
   .project-name { font-weight: 600; font-size: 0.95rem; color: #2c2416; }
-  .project-link { font-size: 0.75rem; color: #8b7355; text-decoration: none; flex-shrink: 0; }
-  .project-link:hover { text-decoration: underline; }
-  .project-what { margin-top: 6px; font-size: 0.8rem; color: #a68a6b; font-weight: 500; }
-  .project-body { padding: 0 16px 16px; }
-  .project-why { font-size: 0.85rem; color: #6b5e4f; line-height: 1.6; margin-bottom: 8px; }
-  .project-desc { font-size: 0.8rem; color: #8b7b6b; line-height: 1.7; }
-  .project-desc li { margin-bottom: 3px; }
-  .project-desc li::before { content: "· "; color: #c4b5a5; }
-  .project-tags { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .project-summary { font-size: 0.8rem; color: #8b7b6b; line-height: 1.5; margin-top: 6px; }
+  .project-tags { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
   .project-tags span { font-size: 0.7rem; color: #a68a6b; background: #f5efe5; padding: 2px 8px; border-radius: 4px; }
+
   .directions { display: flex; flex-direction: column; gap: 10px; }
   .direction { background: #fff; border: 1px solid #e8ddd0; border-radius: 8px; padding: 14px 16px; }
   .direction-highlight { border-left: 3px solid #c4a97d; }
@@ -59,6 +51,21 @@
   footer { text-align: center; padding-top: 24px; font-size: 0.75rem; color: #c4b5a5; }
   footer a { color: #a68a6b; text-decoration: none; }
   footer a:hover { text-decoration: underline; }
+
+  /* 弹窗 */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 100; align-items: flex-end; justify-content: center; }
+  .modal-overlay.active { display: flex; }
+  .modal-sheet { background: #fff; width: 100%; max-width: 640px; max-height: 85vh; border-radius: 16px 16px 0 0; padding: 12px 20px 28px; overflow-y: auto; animation: slideUp 0.25s ease-out; }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .modal-handle { width: 36px; height: 4px; background: #d9d0c5; border-radius: 2px; margin: 0 auto 16px; }
+  .modal-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .modal-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
+  .modal-name { font-weight: 700; font-size: 1.15rem; color: #2c2416; }
+  .modal-detail { font-size: 0.9rem; color: #5a4e3c; line-height: 1.8; margin-bottom: 14px; }
+  .modal-link { display: inline-block; font-size: 0.85rem; color: #8b7355; text-decoration: none; padding: 8px 16px; border: 1px solid #e8ddd0; border-radius: 6px; margin-bottom: 12px; }
+  .modal-link:hover { border-color: #c4a97d; }
+  .modal-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .modal-tags span { font-size: 0.75rem; color: #a68a6b; background: #f5efe5; padding: 3px 10px; border-radius: 4px; }
 </style>
 </head>
 <body>
@@ -105,110 +112,52 @@
 <section>
   <h2>核心项目</h2>
 
-  <details class="project project-highlight">
-    <summary>
-      <div class="project-top">
+  <!-- 卡片平铺概要，点击弹窗看详情 -->
+
+  <div class="project-card project-highlight" onclick="openModal('learn-x')">
+    <div class="project-top">
       <div class="project-icon" style="background:#f0ebe3;">🧠</div>
       <div class="project-name">Learn-X</div>
-        <span class="project-what">认知中枢</span>
-        <a class="project-link" href="https://github.com/SimplyY/learn-x" target="_blank" onclick="event.stopPropagation()">GitHub</a>
-        <span class="expand-icon">▾</span>
-      </div>
-    </summary>
-    <div class="project-body">
-      <div class="project-why">信息洪流中，筛出真正值得保留的判断和方向变化。</div>
-      <ul class="project-desc">
-        <li>周/月/年全周期复盘，Chat Pack 对话沉淀</li>
-        <li>道法术器认知框架，碎片信息变成可检索的判断资产</li>
-        <li>接入 Health-X、Invest-X 等多源输入，一处汇集</li>
-      </ul>
-      <div class="project-tags"><span>认知系统</span><span>Chat Pack</span><span>飞书</span><span>Codex</span></div>
     </div>
-  </details>
+    <div class="project-summary">个人认知中枢，把碎片信息变成可检索、可回溯的判断资产。</div>
+    <div class="project-tags"><span>认知系统</span><span>Chat Pack</span><span>飞书</span><span>Codex</span></div>
+  </div>
 
-  <details class="project project-highlight">
-    <summary>
-      <div class="project-top">
+  <div class="project-card project-highlight" onclick="openModal('research-x')">
+    <div class="project-top">
       <div class="project-icon" style="background:#f0ebe3;">📚</div>
       <div class="project-name">Research-X</div>
-        <span class="project-what">研究体系</span>
-        <a class="project-link" href="https://github.com/SimplyY/research-x" target="_blank" onclick="event.stopPropagation()">GitHub</a>
-        <span class="expand-icon">▾</span>
-      </div>
-    </summary>
-    <div class="project-body">
-      <div class="project-why">把少数值得深读的东西，变成可长期维护的研究资产。</div>
-      <ul class="project-desc">
-        <li>「明天智慧之门」飞书多维表格，统一管理研究材料</li>
-        <li>书籍、播客、长文 → 结构化研究 → 飞书工作文档</li>
-        <li>Worker 自动轮询，确认后异步归档 Markdown</li>
-      </ul>
-      <div class="project-tags"><span>研究</span><span>飞书多维表格</span><span>Worker</span><span>Codex</span></div>
     </div>
-  </details>
+    <div class="project-summary">深度研究体系，把值得深读的内容变成可长期维护的知识资产。</div>
+    <div class="project-tags"><span>研究</span><span>飞书多维表格</span><span>Worker</span><span>Codex</span></div>
+  </div>
 
-  <details class="project project-highlight">
-    <summary>
-      <div class="project-top">
+  <div class="project-card project-highlight" onclick="openModal('invest-x')">
+    <div class="project-top">
       <div class="project-icon" style="background:#f0ebe3;">⚖️</div>
       <div class="project-name">Invest-X</div>
-        <span class="project-what">投资体系</span>
-        <a class="project-link" href="https://github.com/SimplyY/invest-x" target="_blank" onclick="event.stopPropagation()">GitHub</a>
-        <span class="expand-icon">▾</span>
-      </div>
-    </summary>
-    <div class="project-body">
-      <div class="project-why">让每笔操作变成可审计的认知轨迹，而不是情绪的奴隶。</div>
-      <ul class="project-desc">
-        <li>投资理财多维表格，133 笔操作全追踪</li>
-        <li>每日资产截图 → 自动审计 → 有知有行同步</li>
-        <li>有知有行温度提醒 + 月度 Learn-X 投资输入</li>
-      </ul>
-      <div class="project-tags"><span>投资</span><span>有知有行</span><span>飞书</span><span>月记</span></div>
     </div>
-  </details>
+    <div class="project-summary">投资理财追踪系统，让每笔操作变成可审计的认知轨迹。</div>
+    <div class="project-tags"><span>投资</span><span>有知有行</span><span>飞书</span><span>月记</span></div>
+  </div>
 
-  <details class="project project-highlight">
-    <summary>
-      <div class="project-top">
+  <div class="project-card project-highlight" onclick="openModal('health-x')">
+    <div class="project-top">
       <div class="project-icon" style="background:#f0ebe3;">💪</div>
       <div class="project-name">Health-X</div>
-        <span class="project-what">健康追踪</span>
-        <a class="project-link" href="https://github.com/SimplyY/health-x" target="_blank" onclick="event.stopPropagation()">GitHub</a>
-        <span class="expand-icon">▾</span>
-      </div>
-    </summary>
-    <div class="project-body">
-      <div class="project-why">身体是原子世界的底座。把截图变成可追踪的趋势。</div>
-      <ul class="project-desc">
-        <li>小米运动健康周报解析，飞书多维表格自动写入</li>
-        <li>跨表评分（关联日记），健康洞察同步到 Learn-X</li>
-        <li>模块化架构，可扩展接入新数据源</li>
-      </ul>
-      <div class="project-tags"><span>健康</span><span>小米运动</span><span>飞书</span><span>Learn-X</span></div>
     </div>
-  </details>
+    <div class="project-summary">身体健康追踪，把运动截图自动变成可追踪的趋势数据。</div>
+    <div class="project-tags"><span>健康</span><span>小米运动</span><span>飞书</span><span>Learn-X</span></div>
+  </div>
 
-  <details class="project project-highlight">
-    <summary>
-      <div class="project-top">
+  <div class="project-card project-highlight" onclick="openModal('lark-bridge')">
+    <div class="project-top">
       <div class="project-icon" style="background:#f0ebe3;">🔗</div>
       <div class="project-name">Lark Channel Bridge</div>
-        <span class="project-what">飞书桥梁</span>
-        <a class="project-link" href="https://github.com/SimplyY/lark-channel-bridge" target="_blank" onclick="event.stopPropagation()">GitHub</a>
-        <span class="expand-icon">▾</span>
-      </div>
-    </summary>
-    <div class="project-body">
-      <div class="project-why">掏出手机说一句话，AI 就帮你把事情做了。</div>
-      <ul class="project-desc">
-        <li>飞书消息 ↔ Codex CLI 实时桥接</li>
-        <li>多 Bot 协作、多 Profile 管理、群注册自动维护</li>
-        <li>交互卡片回调，安全沙箱 + 命令审批</li>
-      </ul>
-      <div class="project-tags"><span>飞书</span><span>Codex</span><span>Bot</span><span>自动化</span></div>
     </div>
-  </details>
+    <div class="project-summary">飞书与 AI 的桥梁，掏出手机说句话就能让 AI 帮你做事。</div>
+    <div class="project-tags"><span>飞书</span><span>Codex</span><span>Bot</span><span>自动化</span></div>
+  </div>
 </section>
 
 <section>
@@ -232,8 +181,84 @@
 <div class="quote">「着力即差」—— 苏轼</div>
 
 <footer>
-  <p>AI 构建 · #917ea85 · <a href="https://github.com/SimplyY" target="_blank">GitHub</a></p>
+  <p>AI 构建 · #b2f3a01 · <a href="https://github.com/SimplyY" target="_blank">GitHub</a></p>
 </footer>
+
+<!-- 项目详情弹窗 -->
+<div class="modal-overlay" id="modal" onclick="closeModal()">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-icon" id="modal-icon" style="background:#f0ebe3;"></div>
+      <div class="modal-name" id="modal-name"></div>
+    </div>
+    <div class="modal-detail" id="modal-detail"></div>
+    <a class="modal-link" id="modal-link" href="#" target="_blank">GitHub →</a>
+    <div class="modal-tags" id="modal-tags"></div>
+  </div>
+</div>
+
+<script>
+const projects = {
+  'learn-x': {
+    name: 'Learn-X',
+    icon: '🧠',
+    detail: '结合飞书多维表格和 Codex CLI，构建周/月/年全周期复盘体系。通过道法术器认知框架，将 Chat Pack 对话、多源输入（Health-X、Invest-X 等）汇集一处，自动生成结构化底稿，让碎片信息变成可检索、可回溯的判断资产。不是笔记工具，而是一个持续运转的认知操作系统——帮你筛出真正值得保留的判断和方向变化。',
+    link: 'https://github.com/SimplyY/learn-x',
+    tags: ['认知系统', 'Chat Pack', '飞书', 'Codex']
+  },
+  'research-x': {
+    name: 'Research-X',
+    icon: '📚',
+    detail: '基于飞书多维表格「明天智慧之门」统一管理研究材料，支持书籍、播客、长文等多种输入源。Worker 自动轮询待处理项，确认后异步归档为结构化 Markdown 文档。从信息筛选到深度加工到成果沉淀，全流程自动化，让研究不再是孤立的阅读行为，而是持续生长的知识网络。',
+    link: 'https://github.com/SimplyY/research-x',
+    tags: ['研究', '飞书多维表格', 'Worker', 'Codex']
+  },
+  'invest-x': {
+    name: 'Invest-X',
+    icon: '⚖️',
+    detail: '以飞书多维表格为核心，追踪 133+ 笔投资操作，每日自动截图资产并审计。接入有知有行温度数据，定期推送市场温度提醒。每月自动生成月度底稿，汇入 Learn-X 认知体系。不是选股工具，而是一个帮你看清自己决策模式的投资日志系统——让每笔操作变成可审计的认知轨迹，而不是情绪的奴隶。',
+    link: 'https://github.com/SimplyY/invest-x',
+    tags: ['投资', '有知有行', '飞书', '月记']
+  },
+  'health-x': {
+    name: 'Health-X',
+    icon: '💪',
+    detail: '解析小米运动健康周报截图，自动写入飞书多维表格。跨表关联日记评分，生成健康洞察并同步到 Learn-X 认知体系。模块化架构，可扩展接入新数据源。把「今天走了多少步」变成「这个月趋势如何、跟情绪和睡眠有什么关系」——身体是原子世界的底座，值得认真对待。',
+    link: 'https://github.com/SimplyY/health-x',
+    tags: ['健康', '小米运动', '飞书', 'Learn-X']
+  },
+  'lark-bridge': {
+    name: 'Lark Channel Bridge',
+    icon: '🔗',
+    detail: '将飞书消息实时桥接到本地 Codex CLI，支持多 Bot 协作、多 Profile 管理、交互卡片回调。群注册信息自动维护，安全沙箱加命令审批保障执行安全。是整个项目体系的入口层——所有群的能力都通过它触达，手机就是你的 AI 终端。掏出手机说一句话，AI 就帮你把事情做了。',
+    link: 'https://github.com/SimplyY/lark-channel-bridge',
+    tags: ['飞书', 'Codex', 'Bot', '自动化']
+  }
+};
+
+function openModal(id) {
+  const p = projects[id];
+  if (!p) return;
+  document.getElementById('modal-icon').textContent = p.icon;
+  document.getElementById('modal-name').textContent = p.name;
+  document.getElementById('modal-detail').textContent = p.detail;
+  document.getElementById('modal-link').href = p.link;
+  const tagsEl = document.getElementById('modal-tags');
+  tagsEl.innerHTML = p.tags.map(function(t) { return '<span>' + t + '</span>'; }).join('');
+  document.getElementById('modal').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeModal();
+});
+</script>
 
 </body>
 </html>

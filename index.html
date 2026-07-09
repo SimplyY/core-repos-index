@@ -127,10 +127,10 @@
     <div class="project-summary">认知系统：学习输入、复盘、知识沉淀的全流程自动化</div>
     <div class="project-tags"><span>build-bot-log</span><span>learn-x-input</span><span>learn-x-monthly-automation</span><span>learn-x-monthly-journal</span></div>
     </div>
-  <div class="project-card" onclick="openModal('index')">
+  <div class="project-card" onclick="openModal('-roup--ndex')">
     <div class="project-top">
-      <div class="project-icon" style="background:#f0ebe3;">🏠</div>
-      <div class="project-name">index</div>
+      <div class="project-icon" style="background:#f0ebe3;">📦</div>
+      <div class="project-name">Group Index</div>
     </div>
     <div class="project-summary">项目入口中枢：维护核心项目索引站点和总群信息飞书文档，展示所有项目的系统定位和核心能力。</div>
     </div>
@@ -180,7 +180,7 @@
       <div class="project-name">invest-log</div>
     </div>
     <div class="project-summary">投资提醒系统：有知有行温度监控、定时推送与资产快照</div>
-    <div class="project-tags"><span>mobile-asset-update</span><span>youzhiyouxing-temperature-reminder</span></div>
+    <div class="project-tags"><span>youzhiyouxing-temperature-reminder</span></div>
     </div>
   <div class="project-card" onclick="openModal('skills')">
     <div class="project-top">
@@ -188,6 +188,7 @@
       <div class="project-name">skills</div>
     </div>
     <div class="project-summary">Skill 中心：跨项目 Skill 与 Workflow 的创建、维护和版本管理</div>
+    <div class="project-tags"><span>create-agents-md</span></div>
     </div>
 <!-- group-info-cards-end -->
 </section>
@@ -217,7 +218,7 @@
 <div class="quote">「着力即差」—— 苏轼</div>
 
 <footer>
-  <p>AI 构建 · <!-- build-hash -->#ef6603f<!-- /build-hash --> · <a href="https://github.com/SimplyY" target="_blank">GitHub</a></p>
+  <p>AI 构建 · <!-- build-hash -->#ce48a77<!-- /build-hash --> · <a href="https://github.com/SimplyY" target="_blank">GitHub</a></p>
 </footer>
 
 <!-- 项目详情弹窗 -->
@@ -239,14 +240,14 @@ const projects = {
     <!-- group-info-modals-start -->
   'lark-channel-bridge': { name: 'lark-channel-bridge', icon: '🔗', detail: '桥接中枢：飞书消息与本地 Agent 的配置、群注册、机器人协作', link: 'https://github.com/SimplyY/lark-channel-bridge', tags: [] },
   'learn-x': { name: 'learn-x', icon: '🧠', detail: '认知系统：学习输入、复盘、知识沉淀的全流程自动化。飞书机器人 / Code X Bot 每周 Build 复盘报告生成；采集外部每周证据（微信读书等）写入 Learn-X 输入目录', link: 'https://ywhome.feishu.cn/base/W6NLbDh1YahvZ9sbjIccEirBnae', tags: ["build-bot-log","learn-x-input","learn-x-monthly-automation","learn-x-monthly-journal"] },
-  'index': { name: 'index', icon: '🏠', detail: '项目入口中枢：维护核心项目索引站点和总群信息飞书文档，展示所有项目的系统定位和核心能力。', link: 'https://simplyy.github.io/core-repos-index/', tags: [] },
+  '-roup--ndex': { name: 'Group Index', icon: '📦', detail: '项目入口中枢：维护核心项目索引站点和总群信息飞书文档，展示所有项目的系统定位和核心能力。', link: 'https://simplyy.github.io/core-repos-index/', tags: [] },
   'invest-x': { name: 'invest-x', icon: '⚖️', detail: '投资系统：资产配置与投资记录管理，月度复盘与市场温度监控。。每日自动更新：截图导入→审计→有知有行同步；每日自动检查：有知有行每日/月度温度提醒', link: 'https://ywhome.feishu.cn/base/bascnZ4G9HA9YSIXc2wUC4lSNlC', tags: ["资产更新","温度提醒"] },
   'research-x': { name: 'research-x', icon: '📚', detail: '研究系统：多维表格驱动的深度研究、结构化输出与归档。书籍/播客/长文研究：加入候选或直接研究输出飞书文档；高质量认知内容结构化存入智慧之门 Base', link: 'https://ywhome.feishu.cn/base/W6NLbDh1YahvZ9sbjIccEirBnae', tags: ["research-x","wisdom-gate"] },
   'health-x': { name: 'health-x', icon: '💪', detail: '健康系统：体重、运动、睡眠的追踪分析与趋势洞察。解析小米运动健康周报截图与 JSON，校验数据、写入飞书多维表格，同步健康洞察到 Learn-X。', link: 'https://ywhome.feishu.cn/wiki/MLzywkyRCi7hJeklH7iciFC9nRc', tags: ["健康周报"] },
   'life-x': { name: 'life-x', icon: '🌱', detail: '生活系统：日常反思、情绪记录、习惯养成的沉淀闭环。基于每日日记生成个性化修心引导并发送到飞书群', link: 'https://ywhome.feishu.cn/base/WPZRbLRrGarf8bsfYoJcZ8Kwnqc', tags: ["mindfulness-daily"] },
   'read-x': { name: 'read-x', icon: '📖', detail: '阅读系统：微信读书管理与长文精读的结构化输出。长文链接/粘贴自动提取、结构化拆解、精读摘要输出', link: 'https://github.com/SimplyY/read-x', tags: ["long-read"] },
-  'invest-log': { name: 'invest-log', icon: '📈', detail: '投资提醒系统：有知有行温度监控、定时推送与资产快照。手机端个人资产更新：截图导入→审计→有知有行同步；有知有行每日/月度温度提醒', link: 'https://ywhome.feishu.cn/base/bascnZ4G9HA9YSIXc2wUC4lSNlC', tags: ["mobile-asset-update","youzhiyouxing-temperature-reminder"] },
-  'skills': { name: 'skills', icon: '🔧', detail: 'Skill 中心：跨项目 Skill 与 Workflow 的创建、维护和版本管理', link: 'https://github.com/SimplyY/skills', tags: [] },
+  'invest-log': { name: 'invest-log', icon: '📈', detail: '投资提醒系统：有知有行温度监控、定时推送与资产快照。有知有行每日/月度温度提醒', link: 'https://ywhome.feishu.cn/base/bascnZ4G9HA9YSIXc2wUC4lSNlC', tags: ["youzhiyouxing-temperature-reminder"] },
+  'skills': { name: 'skills', icon: '🔧', detail: 'Skill 中心：跨项目 Skill 与 Workflow 的创建、维护和版本管理。生成或更新仓库级 AGENTS.md Codex 指令文件', link: 'https://github.com/SimplyY/skills', tags: ["create-agents-md"] },
     <!-- group-info-modals-end -->
   };
 

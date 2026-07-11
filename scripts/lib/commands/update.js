@@ -7,7 +7,7 @@ import {
   groupIcon, realpathMaybe, statusForPath, formatSkillLine,
   firstSentence, shortDesc, hasChinese
 } from "../utils.js";
-import { syncLinks } from "../link-sync.js";
+import { syncLinks, reverseSyncForGroup } from "../link-sync.js";
 
 export function renderGroupInfo(group, scan, v2Fields, now) {
   const repoPath = realpathMaybe(group.repo_path || group.repo);
@@ -194,8 +194,19 @@ export function processGroup(registry, state, group, mode) {
  * 然后用提取的链接替换 group.links 供后续渲染。
  */
 export function syncAndRenderLinks(group, mode) {
+  // 1. 反向同步：从 Base/标签页拉回 README，确保 README 是最全的链接集合
+  const reverse = reverseSyncForGroup(group, mode);
+
+  // 2. 正向同步：从 README（可能已更新）提取链接 → Base + 标签页
   const existingLinks = group.links || [];
   const result = syncLinks(group, group.record_id, existingLinks, mode);
+
+  // 合并反向同步信息到结果中
+  result.reverseSync = reverse;
+  if (reverse.newLinks?.length > 0) {
+    result.summary = (reverse.reason || "") + " → " + (result.summary || "");
+  }
+
   if (result.links && result.links.length > 0) {
     // 使用 README 提取的链接渲染（保持 {name, url} 格式）
     const linksForRender = result.links.map(l => ({ name: l.name, url: l.url }));

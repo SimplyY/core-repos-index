@@ -7,9 +7,10 @@ import { processGroup } from "./lib/commands/update.js";
 import { topGroup } from "./lib/commands/top.js";
 import { renderList } from "./lib/commands/list.js";
 import { selfTest } from "./lib/commands/self-test.js";
+import { sortChatTabs } from "./lib/link-sync.js";
 
 function usage() {
-  console.log("Usage: group-info.mjs update --group <id|name> [--dry-run|--write|--apply] [--skip-if-recent] | update-all [--dry-run|--write|--apply] [--skip-if-recent] [--refresh] | top --group <id|name> --dry-run|--apply | top-all [--dry-run|--apply] [--refresh] | list [--format json|md|table] [--refresh] | self-test");
+  console.log("Usage: group-info.mjs update --group <id|name> [--dry-run|--write|--apply] [--skip-if-recent] | update-all [--dry-run|--write|--apply] [--skip-if-recent] [--refresh] | top --group <id|name> --dry-run|--apply | top-all [--dry-run|--apply] [--refresh] | list [--format json|md|table] [--refresh] | sort-tabs --group <id|name> [--dry-run|--apply] | sort-tabs-all [--dry-run|--apply] [--refresh] | list [--format json|md|table] [--refresh] | self-test");
 }
 
 function parseArgs(argv) {
@@ -41,7 +42,7 @@ const wantedGroup = normalizeGroupName(args.group);
 const THREE_DAYS_MS = 72 * 60 * 60 * 1000;
 
 let groups;
-if (args.command === "update-all" || args.command === "top-all") {
+if (args.command === "update-all" || args.command === "top-all" || args.command === "sort-tabs-all") {
   groups = registry.groups.filter((group) => group.auto_update !== false);
 } else {
   groups = registry.groups.filter((group) =>
@@ -68,6 +69,22 @@ if (args.command === "list") {
       topGroup(registry, state, group, args.mode);
     } catch (e) {
       console.error('群 ' + group.name + ' 置顶失败：' + e.message);
+    }
+  }
+} else if (args.command === "sort-tabs" || args.command === "sort-tabs-all") {
+  if (!groups.length) {
+    console.error("未在群注册表中记录");
+    process.exit(2);
+  }
+  for (const group of groups) {
+    const chatId = group.chat_id;
+    if (!chatId) { console.log(`${group.name}: 无 chat_id，跳过`); continue; }
+    if (args.mode === "dry-run") {
+      console.log(`${group.name}: dry-run — 将排序标签页（消息 → 链接 → 系统标签 → GitHub）`);
+    } else {
+      console.log(`${group.name}: 排序中…`);
+      sortChatTabs(chatId);
+      console.log(`${group.name}: 完成`);
     }
   }
 } else {

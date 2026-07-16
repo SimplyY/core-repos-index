@@ -72,6 +72,13 @@ node scripts/group-info.mjs self-test
 4. 修改后至少运行 `node scripts/group-info.mjs self-test`。
 5. 涉及飞书写入、群消息发送、批量更新时，先跑 dry-run。
 
+## neatall / neat-freak 执行规则
+
+- `neatall` 对所有仓库执行 `neat-freak` 是 skill 内置约定，无脑照跑，不许 agent 自作主张裁剪。
+- 大改动仓库（>20 行）必须完整跑 `neat-freak`（`/Users/yuwei/code/skills/neat-freak/SKILL.md`），不许用「diff 安全审查」之类简化替代。
+- 多个大改动仓库要**并行**触发 `neat-freak`（不是串行），每个仓库独立完成 ls 盘点 → 变更识别 → 文档/记忆同步 → 自检 → 摘要。
+- 这件事由飞书 bot 自己完成，不推给桌面 Codex；「批量场景不适合、token 不现实」不是理由。
+
 ## 不要做什么
 
 - 不要恢复静态网站或 `sync-site`。

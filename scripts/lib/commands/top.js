@@ -15,7 +15,7 @@ function renderTopNoticeCard(group, scan, now, v2Fields) {
   const positioning = group.positioning || '';
   const repo = group.repo || '';
 
-  const skillLines = scan.skills.slice(0, 5).map((s, i) => {
+  const skillLines = scan.skills.map((s, i) => {
     const n = s.name_zh || s.name;
     const d = shortDesc(s.description_zh || s.description);
     return (i + 1) + '. ' + (d ? n + '：' + d : n);
@@ -49,7 +49,7 @@ function renderTopNoticeCard(group, scan, now, v2Fields) {
 
   if (skillLines.length > 0) {
     elements.push({ tag: 'hr' });
-    elements.push({ tag: 'markdown', content: '🧩 **主要 Skill**\n' + skillLines.join('\n') });
+    elements.push({ tag: 'markdown', content: '🧩 **Skill**\n' + skillLines.join('\n') });
   }
   if (workflowLines.length > 0) {
     elements.push({ tag: 'markdown', content: '⚙️ **主要 Workflow**\n' + workflowLines.join('\n') });

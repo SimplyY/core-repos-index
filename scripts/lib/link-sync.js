@@ -38,6 +38,17 @@ export function normalizeUrl(url) {
   return u;
 }
 
+function isPlaceholderUrl(url) {
+  try {
+    const u = new URL(url);
+    if (/^xxx/.test(u.hostname)) return true;
+    if (u.pathname.split("/").some((seg) => seg === "xxx")) return true;
+    return false;
+  } catch {
+    return true;
+  }
+}
+
 function urlSpecificity(url) {
   return url.includes("?") ? 1 : 0;
 }
@@ -54,12 +65,23 @@ function classifyUrl(url) {
   if (url.includes("feishu.cn/base/") || url.includes("larkoffice.com/base/")) return "base";
   if (url.includes("feishu.cn/wiki/") || url.includes("larkoffice.com/wiki/")) return "doc";
   if (url.includes("feishu.cn/docx/") || url.includes("larkoffice.com/docx/")) return "doc";
-  if (url.includes("feishu.cn/share/base/form/") || url.includes("larkoffice.com/share/base/form/")) return "doc";
+  if (url.includes("feishu.cn/share/base/form/") || url.includes("larkoffice.com/share/base/form/")) return "url";
   if (isFeishuUrl(url)) return "doc";
   return "url";
 }
 
 // ── 链接提取 ──
+
+/** 每行是否在 ``` 围栏代码块内（围栏行本身不算）。 */
+function codeBlockMask(lines) {
+  const mask = new Array(lines.length).fill(false);
+  let fence = false;
+  for (let i = 0; i < lines.length; i++) {
+    if (/^\s*```/.test(lines[i])) { fence = !fence; continue; }
+    mask[i] = fence;
+  }
+  return mask;
+}
 
 /**
  * 从仓库核心文档中提取链接，按重要性排序
@@ -75,16 +97,19 @@ export function extractLinksFromRepo(repoPath) {
     if (!existsSync(filePath)) continue;
     const text = readFileSync(filePath, "utf8");
     const lines = text.split("\n");
+    const inCode = codeBlockMask(lines);
 
     // Markdown 链接 [name](url)
     const mdLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g;
     for (let i = 0; i < lines.length; i++) {
+      if (inCode[i]) continue;
       const line = lines[i];
       let match;
       mdLinkRegex.lastIndex = 0;
       while ((match = mdLinkRegex.exec(line)) !== null) {
         const name = match[1].trim();
         const url = match[2].trim();
+        if (isPlaceholderUrl(url)) continue;
         const canonical = normalizeUrl(url);
 
         const type = classifyUrl(url);
@@ -119,8 +144,10 @@ export function extractLinksFromRepo(repoPath) {
       if (!existsSync(filePath)) continue;
       const text = readFileSync(filePath, "utf8");
       const lines = text.split("\n");
+      const inCode = codeBlockMask(lines);
       const bareRegex = /(https?:\/\/[^\s<>"]+)/g;
       for (let i = 0; i < lines.length; i++) {
+        if (inCode[i]) continue;
         const line = lines[i];
         let match;
         bareRegex.lastIndex = 0;
@@ -191,10 +218,12 @@ export function formatLinksForBase(links) {
 export function mergeLinks(readmeLinks, existingBaseLinks) {
   const seen = new Map();
   for (const l of readmeLinks) {
+    if (isPlaceholderUrl(l.url)) continue;
     const c = normalizeUrl(l.url);
     if (!seen.has(c)) seen.set(c, { name: l.name, url: l.url });
   }
   for (const l of existingBaseLinks) {
+    if (isPlaceholderUrl(l.url)) continue;
     const c = normalizeUrl(l.url);
     if (!seen.has(c)) seen.set(c, { name: l.name, url: l.url });
   }
@@ -286,7 +315,7 @@ function updateChatTab(chatId, tabId, name, url, linkType) {
     env: { ...process.env, LARKSUITE_CLI_NO_UPDATE_NOTIFIER: "1", LARKSUITE_CLI_NO_SKILLS_NOTIFIER: "1" },
   });
   if (result.status !== 0) {
-    console.error(`[link-sync] 更新标签页失败 (${chatId}):`, result.stderr);
+    console.warn(`[link-sync] 更新标签页失败，飞书未开放更新 API，跳过 (${chatId})`);
   }
   return result.status === 0;
 }
@@ -323,9 +352,10 @@ export function syncLinksToChatTabs(group, links, mode) {
     if (existingTab) {
       const existingContent = existingTab.tab_content?.[existingTab.tab_type] || "";
       const urlChanged = existingContent !== l.url;
-      // 只更新 URL，不覆盖用户自定义的标签标题
-      if (urlChanged) {
-        if (mode === "apply") updateChatTab(chatId, existingTab.tab_id, existingTab.tab_name, l.url, type);
+      const nameChanged = existingTab.tab_name !== l.name;
+      // README 是链接名称权威来源，名字或 URL 不一致都以 README 为准更新
+      if (urlChanged || nameChanged) {
+        if (mode === "apply") updateChatTab(chatId, existingTab.tab_id, l.name, l.url, type);
         updated++;
       }
     } else {
@@ -371,7 +401,7 @@ function dedupeChatTabs(chatId) {
     "--as", "bot", "--data", body, "--format", "json",
   ], { encoding: "utf8", maxBuffer: 1024 * 1024,
     env: { ...process.env, LARKSUITE_CLI_NO_UPDATE_NOTIFIER: "1", LARKSUITE_CLI_NO_SKILLS_NOTIFIER: "1" } });
-  if (result.status !== 0) console.error(`[link-sync] 删除重复标签页失败 (${chatId}):`, result.stderr);
+  if (result.status !== 0 && dupIds.length > 0) console.warn(`[link-sync] 检测到 ${dupIds.length} 个重复标签页，飞书未开放删除 API，需手动清理 (${chatId})`);
   return { ok: result.status === 0, deleted: dupIds.length };
 }
 

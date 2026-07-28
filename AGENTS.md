@@ -118,3 +118,4 @@ node scripts/group-info.mjs self-test
 ```
 
 这样 `group-info` 能提取到链接名称（「核心资产」）和 URL，自动同步到 Base 和群标签页。
+占位符链接（URL 含 `xxx.feishu.cn`）由 `link-sync.js` 的 `isPlaceholderUrl` 过滤，不同步到 Base 和群标签页。

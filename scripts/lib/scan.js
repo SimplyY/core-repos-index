@@ -4,6 +4,7 @@ import { spawnSync } from "node:child_process";
 import { sensitiveName } from "./fields.js";
 import { parseFrontmatter } from "./frontmatter.js";
 import { hasChinese } from "./utils.js";
+import { isPlaceholderUrl } from "./link-sync.js";
 
 export function listSkillFiles(repo) {
   const files = [];
@@ -82,6 +83,9 @@ export function scanDocDataSources(repo) {
     for (const line of text.split("\n")) {
       if (/(export\s|TOKEN|SECRET|PASSWORD|APP_SECRET)/i.test(line)) continue;
       if (/(多维表格|Base|bitable|飞书|Lark|Feishu)/i.test(line)) {
+        // 跳过含占位符链接的行
+        const urlMatch = line.match(/https?:\/\/[^\s)]+/);
+        if (urlMatch && isPlaceholderUrl(urlMatch[0])) continue;
         lines.push(`- ${rel}：${line.trim().replace(/^[-#\s]+/, "")}`);
       }
     }

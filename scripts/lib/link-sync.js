@@ -38,7 +38,7 @@ export function normalizeUrl(url) {
   return u;
 }
 
-function isPlaceholderUrl(url) {
+export function isPlaceholderUrl(url) {
   try {
     const u = new URL(url);
     if (/^xxx/.test(u.hostname)) return true;
@@ -479,8 +479,9 @@ function mergeAllLinks(readmeLinks, baseLinks, tabLinks) {
 
   for (const src of [readmeLinks, baseLinks, tabLinks]) {
     for (const l of src) {
+      if (!l.url || isPlaceholderUrl(l.url)) continue;
       const c = normalizeUrl(l.url);
-      if (!l.url || seen.has(c)) continue;
+      if (seen.has(c)) continue;
       seen.add(c);
       const type = l.type || (l.url.includes("feishu.cn") ? "doc" : "url");
       merged.push({ name: l.name, url: l.url, type });

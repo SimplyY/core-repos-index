@@ -26,8 +26,9 @@
 
 ## 关键文件
 
-- `scripts/group-info.mjs`：唯一执行入口。
-- `scripts/lib/`：核心模块目录（`state.js`、`base.js`、`utils.js`、`fields.js`、`frontmatter.js`、`scan.js`）及 `commands/`（`update.js`、`top.js`、`list.js`、`self-test.js`）。
+- `scripts/group-info.mjs`：主执行入口（支持 update / update-all / top / top-all / list / sort-tabs / self-test 等子命令）。
+- `scripts/reverse-link-sync.mjs`：辅助入口，从 Base/标签页反向同步链接回 README。
+- `scripts/lib/`：核心模块目录（`state.js`、`base.js`、`utils.js`、`fields.js`、`frontmatter.js`、`scan.js`、`link-sync.js`）及 `commands/`（`update.js`、`top.js`、`list.js`、`self-test.js`）。
 - `state.json`：机器运行状态，只记录更新时间、置顶消息和上次摘要。
 - `GROUP_INFO.md`：本群 Agent 上下文，由脚本生成。
 - `AGENTS.md`：本文件。

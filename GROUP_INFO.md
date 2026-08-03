@@ -6,7 +6,7 @@ group_name: "group-Index"
 repo_path: "/Users/yuwei/code/group-index"
 repo_url: null
 group_info_path: "/Users/yuwei/code/group-index/GROUP_INFO.md"
-updated_at: "2026-08-01T00:01:10.287Z"
+updated_at: "2026-08-03T00:00:29.505Z"
 icon: "🏠"
 name_zh: "Group Index"
 summary: "项目入口中枢，管理越来越多的个人项目。用 group index 多维表格管理所有项目的人工判断字段，通过群置顶卡片实现项目概览。"
@@ -40,7 +40,6 @@ todos: ["将工作流、待办、备注等扫描不出来的人脑字段维护�
 - README.md：[group index 多维表格](https://ywhome.feishu.cn/base/AxMAbMTKOahp74sDuhqcERnrnph)
 - README.md：[group index](https://ywhome.feishu.cn/wiki/EcRmwLIMFifYx5khxDRcItIenzg?table=tblwQkPtmNOv7tSY&view=vew2SIESb0)
 - README.md：[group index 文档](https://ywhome.feishu.cn/docx/QOW9dLI9hoL4CyxkJvUcaeEsnXe)
-- README.md：[多维表格](https://xxx.feishu.cn/base/xxx)
 
 ## 待办
 - 将工作流、待办、备注等扫描不出来的人脑字段维护到 group index 多维表格
@@ -50,4 +49,4 @@ todos: ["将工作流、待办、备注等扫描不出来的人脑字段维护�
 - 工作目录：可访问
 - 链接数：4
 - Skill 扫描：正常
-- 最近更新时间：2026-08-01T00:01:10.287Z
+- 最近更新时间：2026-08-03T00:00:29.505Z

@@ -61,6 +61,8 @@ if (args.skipIfRecent) {
   groups = filtered;
 }
 
+const failures = [];
+
 if (args.command === "list") {
   console.log(renderList(registry, args.format));
 } else if (args.command === "top" || args.command === "top-all") {
@@ -69,6 +71,7 @@ if (args.command === "list") {
       topGroup(registry, state, group, args.mode);
     } catch (e) {
       console.error('群 ' + group.name + ' 置顶失败：' + e.message);
+      failures.push({ group: group.name, command: 'top', error: e.message });
     }
   }
 } else if (args.command === "sort-tabs" || args.command === "sort-tabs-all") {
@@ -93,12 +96,17 @@ if (args.command === "list") {
     process.exit(2);
   }
   for (const group of groups) {
-    const result = processGroup(registry, state, group, args.mode);
-    console.log(`\n${result.group} :: ${result.mode} :: ${result.target || "no target"} ===\n`);
-    console.log("----- GROUP_INFO.md -----");
-    console.log(result.markdown);
-    console.log("----- Lark Pin Summary -----");
-    console.log(result.summary);
+    try {
+      const result = processGroup(registry, state, group, args.mode);
+      console.log(`\n${result.group} :: ${result.mode} :: ${result.target || "no target"} ===\n`);
+      console.log("----- GROUP_INFO.md -----");
+      console.log(result.markdown);
+      console.log("----- Lark Pin Summary -----");
+      console.log(result.summary);
+    } catch (e) {
+      console.error('群 ' + group.name + ' 更新失败：' + e.message);
+      failures.push({ group: group.name, command: 'update', error: e.message });
+    }
   }
   // update-all --apply 完成后自动执行置顶
   if (args.command === 'update-all' && args.mode === 'apply') {
@@ -108,8 +116,17 @@ if (args.command === "list") {
         topGroup(registry, state, group, args.mode);
       } catch (e) {
         console.error('群 ' + group.name + ' 置顶失败：' + e.message);
-        // 继续处理下一个群，不中断整个流程
+        failures.push({ group: group.name, command: 'top', error: e.message });
       }
     }
   }
+}
+
+// 批量命令失败汇总：有失败时以非零退出码结束，让自动化调用方可感知
+if (failures.length > 0) {
+  console.error(`\n=== 失败汇总（${failures.length} 个）===`);
+  for (const f of failures) {
+    console.error(`  ✗ ${f.group} (${f.command}): ${f.error}`);
+  }
+  process.exit(1);
 }

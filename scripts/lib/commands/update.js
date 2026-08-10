@@ -19,7 +19,12 @@ export function renderGroupInfo(group, scan, v2Fields, now) {
 
   const icon = groupIcon(group, v2Fields);
   const summary = group.positioning || (v2Fields && v2Fields.summary) || '';
-  const detail = (v2Fields && v2Fields.detail) || group.notes || defaultDetail(group, scan);
+  const oldSummary = v2Fields && v2Fields.summary;
+  const oldDetail = v2Fields && v2Fields.detail;
+  // 默认 detail 以 summary 开头；定位变化后让它随 Base 刷新，独立人工说明仍保留。
+  const staleGeneratedDetail = oldSummary && oldDetail && group.positioning
+    && oldSummary !== group.positioning && oldDetail.startsWith(oldSummary + '。');
+  const detail = (!staleGeneratedDetail && oldDetail) || group.notes || defaultDetail(group, scan);
   const tags = (v2Fields && v2Fields.tags) || defaultTags(scan);
   const rawEntryUrl = (v2Fields && v2Fields.entry_url) || "";
   const isGuessedGitHub = /github\.com\/SimplyY\/[\w-]+$/.test(rawEntryUrl);

@@ -83,7 +83,7 @@ export function defaultDetail(group, scan) {
       .slice(0, 2);
     if (skillDescs.length > 0) parts.push(skillDescs.join('；'));
   }
-  return parts.filter(Boolean).join('。');
+  return parts.filter(Boolean).join('。').replace(/。{2,}/g, '。');
 }
 
 export function defaultTags(scan) {

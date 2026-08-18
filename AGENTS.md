@@ -72,6 +72,7 @@ node scripts/group-info.mjs self-test
 3. 只改与任务直接相关的文件，不顺手重构群置顶逻辑。
 4. 修改后至少运行 `node scripts/group-info.mjs self-test`。
 5. 涉及飞书写入、群消息发送、批量更新时，先跑 dry-run。
+6. `--apply` 开始前会只读预检 lark-cli 身份策略；当前 profile 必须为 `user-default`（`strict-mode off`、`default-as auto`），不符则退出不写入。
 
 ## neatall / neat-freak 执行规则
 

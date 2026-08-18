@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 // update-all --apply 完成后自动衔接 top-all
+import { spawnSync } from "node:child_process";
 import { readState, attachState } from "./lib/state.js";
 import { fetchGroupIndexGroups } from "./lib/base.js";
 import { normalizeGroupName } from "./lib/utils.js";
@@ -26,6 +27,31 @@ function parseArgs(argv) {
   return args;
 }
 
+function assertMixedIdentityPolicy(mode) {
+  if (mode !== "apply") return;
+  const readConfig = (command) => spawnSync("lark-cli", ["config", command], {
+    encoding: "utf8",
+    env: {
+      ...process.env,
+      LARKSUITE_CLI_NO_UPDATE_NOTIFIER: "1",
+      LARKSUITE_CLI_NO_SKILLS_NOTIFIER: "1",
+    },
+  });
+  const strict = readConfig("strict-mode");
+  const defaultAs = readConfig("default-as");
+  if (strict.status !== 0 || defaultAs.status !== 0) {
+    throw new Error("无法读取当前 lark-cli 身份策略；未执行任何群信息写入。请先将当前 bridge Profile 配为 user-default。");
+  }
+  const strictMode = strict.stdout.match(/strict-mode:\s*(\w+)/)?.[1];
+  const defaultIdentity = defaultAs.stdout.match(/default-as:\s*(\w+)/)?.[1];
+  if (strictMode !== "off" || defaultIdentity !== "auto") {
+    throw new Error(
+      `当前 lark-cli 身份策略为 strict-mode=${strictMode || "unknown"}, default-as=${defaultIdentity || "unknown"}；` +
+      "group-info 同时需要 user（Base）和 bot（群消息），请一次性将当前 bridge Profile 配为 user-default，任务内不会切换身份。"
+    );
+  }
+}
+
 const args = parseArgs(process.argv);
 if (!args.command) {
   usage();
@@ -34,6 +60,13 @@ if (!args.command) {
 if (args.command === "self-test") {
   selfTest();
   process.exit(0);
+}
+
+try {
+  assertMixedIdentityPolicy(args.mode);
+} catch (e) {
+  console.error("身份策略预检失败：" + e.message);
+  process.exit(13);
 }
 
 const state = readState();

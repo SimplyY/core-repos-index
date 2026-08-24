@@ -21,9 +21,14 @@ export function listProjects(registry) {
   return rows;
 }
 
-export function renderList(registry, format) {
+export function renderList(registry, format, opts = {}) {
   const rows = listProjects(registry);
-  if (format === "json") return JSON.stringify(rows, null, 2);
+  if (opts.withMeta && format !== "json") {
+    throw new Error("--with-meta 仅支持 --format json");
+  }
+  if (format === "json") {
+    return JSON.stringify(opts.withMeta ? { items: rows, meta: registry.meta } : rows, null, 2);
+  }
   if (format === "md") {
     const lines = ["| # | 项目 | 定位 | 入口 | 标签 |", "|---|------|------|------|------|"];
     rows.forEach((r) => {

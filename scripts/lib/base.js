@@ -48,9 +48,9 @@ function readCache() {
   }
 }
 
-function writeCache(groups) {
+function writeCache(groups, ts = Date.now()) {
   try {
-    writeFileSync(CACHE_PATH, JSON.stringify({ ts: Date.now(), groups }, null, 2));
+    writeFileSync(CACHE_PATH, JSON.stringify({ ts, groups }, null, 2));
   } catch {
     // 写缓存失败不阻塞主流程
   }
@@ -64,14 +64,36 @@ function getFromCache() {
   return { groups: cache.groups, ts: cache.ts };
 }
 
-export function fetchGroupIndexGroups(opts = {}) {
-  const { refresh = false } = opts;
+export function buildRegistryMeta(source, fetchedAt, now = Date.now()) {
+  const age = Math.max(0, Math.floor((now - fetchedAt) / 1000));
+  return {
+    source,
+    fetched_at: new Date(fetchedAt).toISOString(),
+    age,
+    degraded: source === "stale-cache",
+  };
+}
 
-  if (!refresh) {
+export function fetchGroupIndexGroups(opts = {}) {
+  const { refresh = false, requireFresh = false } = opts;
+
+  const fallbackOrThrow = (code, message) => {
+    if (!requireFresh) {
+      const cache = readCache();
+      if (cache) {
+        return { groups: cache.groups, meta: buildRegistryMeta("stale-cache", cache.ts) };
+      }
+    }
+    const error = new Error(message);
+    error.exitCode = code;
+    throw error;
+  };
+
+  if (!refresh && !requireFresh) {
     const result = getFromCache();
     if (result) {
       console.error("[group-info] 使用缓存群列表（" + Math.round((Date.now() - result.ts) / 1000) + " 秒前）");
-      return result.groups;
+      return { groups: result.groups, meta: buildRegistryMeta("cache", result.ts) };
     }
   }
 
@@ -99,12 +121,15 @@ export function fetchGroupIndexGroups(opts = {}) {
       }
     });
     if (result.status !== 0) {
-      console.error("读取 group index 多维表格失败：", result.stderr || result.stdout);
-      const cachedFallback1 = readCache();
-      if (cachedFallback1) return cachedFallback1.groups;
-      process.exit(11);
+      const detail = result.stderr || result.stdout || result.error?.message || "未知错误";
+      return fallbackOrThrow(11, "读取 group index 多维表格失败：" + detail);
     }
-    const data = JSON.parse(result.stdout);
+    let data;
+    try {
+      data = JSON.parse(result.stdout);
+    } catch (error) {
+      return fallbackOrThrow(11, "解析 group index 多维表格响应失败：" + error.message);
+    }
     const fields = data?.data?.fields || groupIndexFields;
     for (const row of data?.data?.data || []) {
       const item = {};
@@ -117,11 +142,9 @@ export function fetchGroupIndexGroups(opts = {}) {
   }
   const groups = rows.map(({ item, rid }) => normalizeBaseRow(item, rid)).filter((group) => group.name);
   if (!groups.length) {
-    console.error("group index 多维表格没有项目记录");
-    const cachedFallback2 = readCache();
-    if (cachedFallback2) return cachedFallback2.groups;
-    process.exit(12);
+    return fallbackOrThrow(12, "group index 多维表格没有项目记录");
   }
-  writeCache(groups);
-  return groups;
+  const fetchedAt = Date.now();
+  writeCache(groups, fetchedAt);
+  return { groups, meta: buildRegistryMeta("live", fetchedAt) };
 }

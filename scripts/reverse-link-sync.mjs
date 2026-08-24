@@ -9,11 +9,12 @@ import { reverseSyncForGroup } from "./lib/link-sync.js";
 
 // 主流程
 async function main() {
-  const mode = process.argv[2] || "dry-run";
+  const mode = process.argv[2] === "apply" ? "apply" : "dry-run";
   const apply = mode === "apply";
+  const requireFresh = apply || process.argv.includes("--require-fresh");
 
   console.error("[reverse-link-sync] 拉取群列表...");
-  const groups = fetchGroupIndexGroups({ refresh: true });
+  const { groups } = fetchGroupIndexGroups({ refresh: true, requireFresh });
 
   const results = [];
 

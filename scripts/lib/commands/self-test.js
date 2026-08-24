@@ -1,7 +1,8 @@
 import { parseFrontmatter, parseGroupInfoV2 } from "../frontmatter.js";
-import { normalizeBaseRow } from "../base.js";
+import { buildRegistryMeta, normalizeBaseRow } from "../base.js";
 import { parseLinks } from "../utils.js";
-import { renderGroupInfo, renderPinSummary } from "./update.js";
+import { renderGroupInfo, renderPinSummary, groupInfoChanged } from "./update.js";
+import { renderList } from "./list.js";
 
 function assertEqual(actual, expected, label) {
   if (actual !== expected) {
@@ -19,6 +20,15 @@ function assertNotEqual(actual, expected, label) {
   if (actual === expected) {
     throw new Error(label + "\nshould not be: " + expected);
   }
+}
+
+function assertThrows(fn, label) {
+  try {
+    fn();
+  } catch {
+    return;
+  }
+  throw new Error(label + "\nexpected an error");
 }
 
 export function selfTest() {
@@ -44,6 +54,33 @@ export function selfTest() {
   assertEqual(baseGroup.priority, 2, "base priority");
   assertEqual(baseGroup.manual_workflows[0].description_zh, "每周处理", "base workflows");
   assertEqual(parseLinks("[入口](https://example.com/x)")[0].url, "https://example.com/x", "markdown links");
+
+  const cacheMeta = buildRegistryMeta("cache", 100000, 1023456);
+  assertEqual(cacheMeta.source, "cache", "cache metadata source");
+  assertEqual(cacheMeta.fetched_at, "1970-01-01T00:01:40.000Z", "cache metadata fetched_at");
+  assertEqual(cacheMeta.age, 923, "cache metadata age");
+  assertEqual(cacheMeta.degraded, false, "cache metadata degraded");
+
+  const liveMeta = buildRegistryMeta("live", 100000, 100000);
+  assertEqual(liveMeta.source, "live", "live metadata source");
+  assertEqual(liveMeta.age, 0, "live metadata age");
+  assertEqual(liveMeta.degraded, false, "live metadata degraded");
+  assertEqual(buildRegistryMeta("cache", 200000, 100000).age, 0, "future metadata age clamps to zero");
+
+  const staleMeta = buildRegistryMeta("stale-cache", 100000, 1023456);
+  assertEqual(staleMeta.degraded, true, "stale cache metadata degraded");
+  const listRegistry = { groups: [], meta: staleMeta };
+  assertEqual(Array.isArray(JSON.parse(renderList(listRegistry, "json"))), true, "legacy list json array");
+  const listWithMeta = JSON.parse(renderList(listRegistry, "json", { withMeta: true }));
+  assertEqual(Array.isArray(listWithMeta.items), true, "list with metadata items");
+  assertEqual(listWithMeta.meta.source, "stale-cache", "list with metadata source");
+  assertThrows(() => renderList(listRegistry, "table", { withMeta: true }), "metadata requires json format");
+
+  const oldMarkdown = 'updated_at: "2026-08-20T00:00:00.000Z"\n正文\n- 最近更新时间：2026-08-20T00:00:00.000Z\n';
+  const newMarkdown = 'updated_at: "2026-08-21T00:00:00.000Z"\n正文\n- 最近更新时间：2026-08-21T00:00:00.000Z\n';
+  assertEqual(groupInfoChanged(null, newMarkdown), true, "missing GROUP_INFO requires write");
+  assertEqual(groupInfoChanged(oldMarkdown, newMarkdown), false, "timestamp-only GROUP_INFO change");
+  assertEqual(groupInfoChanged(oldMarkdown, newMarkdown.replace("正文", "正文已变更")), true, "semantic GROUP_INFO change");
 
   const summary = renderPinSummary(
     { name: "demo", group_name: "Demo 群", positioning: "测试定位", repo: "/tmp/demo", links: [] },

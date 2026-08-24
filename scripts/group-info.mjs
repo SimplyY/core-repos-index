@@ -11,7 +11,7 @@ import { selfTest } from "./lib/commands/self-test.js";
 import { sortChatTabs } from "./lib/link-sync.js";
 
 function usage() {
-  console.log("Usage: group-info.mjs update --group <id|name> [--dry-run|--write|--apply] [--skip-if-recent] | update-all [--dry-run|--write|--apply] [--skip-if-recent] [--refresh] | top --group <id|name> --dry-run|--apply | top-all [--dry-run|--apply] [--refresh] | list [--format json|md|table] [--refresh] | sort-tabs --group <id|name> [--dry-run|--apply] | sort-tabs-all [--dry-run|--apply] [--refresh] | list [--format json|md|table] [--refresh] | self-test");
+  console.log("Usage: group-info.mjs update --group <id|name> [--dry-run|--write|--apply] [--skip-if-recent] [--require-fresh] | update-all [--dry-run|--write|--apply] [--skip-if-recent] [--refresh] [--require-fresh] | top --group <id|name> --dry-run|--apply [--require-fresh] | top-all [--dry-run|--apply] [--refresh] [--require-fresh] | list [--format json|md|table] [--refresh] [--with-meta] [--require-fresh] | sort-tabs --group <id|name> [--dry-run|--apply] [--require-fresh] | sort-tabs-all [--dry-run|--apply] [--refresh] [--require-fresh] | self-test");
 }
 
 function parseArgs(argv) {
@@ -22,6 +22,8 @@ function parseArgs(argv) {
     else if (arg === "--group") args.group = argv[++i];
     else if (arg === "--skip-if-recent") args.skipIfRecent = true;
     else if (arg === "--refresh") args.refresh = true;
+    else if (arg === "--with-meta") args.withMeta = true;
+    else if (arg === "--require-fresh") args.requireFresh = true;
     else if (arg === "--format") args.format = argv[++i];
   }
   return args;
@@ -62,6 +64,11 @@ if (args.command === "self-test") {
   process.exit(0);
 }
 
+if (args.withMeta && (args.command !== "list" || args.format !== "json")) {
+  console.error("--with-meta 仅支持 list --format json");
+  process.exit(2);
+}
+
 try {
   assertMixedIdentityPolicy(args.mode);
 } catch (e) {
@@ -70,7 +77,18 @@ try {
 }
 
 const state = readState();
-const registry = attachState({ groups: fetchGroupIndexGroups({ refresh: args.refresh }) }, state);
+const requireFresh = args.requireFresh || args.mode === "write" || args.mode === "apply";
+let registryData;
+try {
+  registryData = fetchGroupIndexGroups({
+    refresh: args.refresh || requireFresh,
+    requireFresh,
+  });
+} catch (error) {
+  console.error("[group-info] " + error.message);
+  process.exit(error.exitCode || 11);
+}
+const registry = attachState({ groups: registryData.groups, meta: registryData.meta }, state);
 const wantedGroup = normalizeGroupName(args.group);
 const THREE_DAYS_MS = 72 * 60 * 60 * 1000;
 
@@ -97,7 +115,7 @@ if (args.skipIfRecent) {
 const failures = [];
 
 if (args.command === "list") {
-  console.log(renderList(registry, args.format));
+  console.log(renderList(registry, args.format, args));
 } else if (args.command === "top" || args.command === "top-all") {
   for (const group of groups) {
     try {

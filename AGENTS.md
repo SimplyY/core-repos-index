@@ -39,17 +39,24 @@
 # 查看全量项目
 node scripts/group-info.mjs list --format table
 
+# 查看注册表来源与新鲜度（JSON）
+node scripts/group-info.mjs list --format json --with-meta
+
+# 要求实时读取；失败时非零退出，不使用旧缓存
+node scripts/group-info.mjs list --format json --with-meta --require-fresh
+
 # 预览单个 GROUP_INFO.md，不写文件
-node scripts/group-info.mjs update --group index --dry-run
+node scripts/group-info.mjs update --group group-index --dry-run
 
 # 更新单个 GROUP_INFO.md
-node scripts/group-info.mjs update --group index --apply
+# --apply 自动要求实时读取，Base 失败时不会进入写入流程
+node scripts/group-info.mjs update --group group-index --apply
 
 # 更新全部 GROUP_INFO.md
 node scripts/group-info.mjs update-all --apply
 
 # 发卡片 + 置顶
-node scripts/group-info.mjs top --group index --apply
+node scripts/group-info.mjs top --group group-index --apply
 
 # 全量群发卡片 + 置顶
 node scripts/group-info.mjs top-all --apply

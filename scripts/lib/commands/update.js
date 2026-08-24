@@ -155,6 +155,16 @@ export function renderPinSummary(group, scan, now, v2Fields) {
   return parts.join("\n");
 }
 
+export function normalizeGeneratedTimestamps(markdown) {
+  return markdown
+    .replace(/^updated_at:\s*.*$/m, "updated_at: <generated>")
+    .replace(/^- 最近更新时间：.*$/m, "- 最近更新时间：<generated>");
+}
+
+export function groupInfoChanged(existing, candidate) {
+  return existing === null || normalizeGeneratedTimestamps(existing) !== normalizeGeneratedTimestamps(candidate);
+}
+
 export function processGroup(registry, state, group, mode) {
   const now = new Date().toISOString();
   const scan = scanRepo(group);
@@ -168,30 +178,36 @@ export function processGroup(registry, state, group, mode) {
 
   const target = group.group_info_path || (repoPath ? join(repoPath, "GROUP_INFO.md") : null);
   let v2Fields = null;
+  let existingMarkdown = null;
   if (target && existsSync(target)) {
     try {
-      const existing = readFileSync(target, "utf8");
-      v2Fields = parseGroupInfoV2(existing);
+      existingMarkdown = readFileSync(target, "utf8");
+      v2Fields = parseGroupInfoV2(existingMarkdown);
     } catch (e) { /* ignore */ }
   }
 
   const markdown = renderGroupInfo(group, scan, v2Fields, now);
   const summary = renderPinSummary(group, scan, now, v2Fields);
+  const changed = groupInfoChanged(existingMarkdown, markdown);
 
   if (mode === "write" || mode === "apply") {
     if (!target) throw new Error("未在群注册表中记录 repo，无法写入 group-info.md");
-    mkdirSync(dirname(target), { recursive: true });
-    writeFileSync(target, markdown);
+    if (changed) {
+      mkdirSync(dirname(target), { recursive: true });
+      writeFileSync(target, markdown);
+    } else {
+      console.log(group.name + ": GROUP_INFO.md 语义无变化，跳过写入");
+    }
   }
 
-  if (mode === "apply") {
+  if (mode === "apply" && changed) {
     const runtime = stateFor(state, group);
     runtime.last_updated = now;
     runtime.last_updated_at = now;
     saveState(state);
   }
 
-  return { group: group.name, mode, target, markdown, summary, linkSync: linkResult.summary };
+  return { group: group.name, mode, target, markdown, summary, changed, linkSync: linkResult.summary };
 }
 
 /**

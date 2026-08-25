@@ -87,6 +87,20 @@ export function shortDesc(text) {
   return firstSentence(text);
 }
 
+export function cleanSkillDesc(skill, max = 25) {
+  const raw = (skill.description_zh || skill.description || "").trim();
+  if (!raw) return "";
+  const segs = raw.match(/[\u4e00-\u9fa5][\u4e00-\u9fa5，。！？、·：:；;（）()\-\w ]*/g) || [];
+  let best = "";
+  for (const s of segs) {
+    const cut = s.replace(/[^\u4e00-\u9fa5]+$/, "");
+    if (cut.length > best.length) best = cut;
+  }
+  const cnCount = (best.match(/[\u4e00-\u9fa5]/g) || []).length;
+  if (cnCount < 6) return "";
+  return best.length > max ? best.slice(0, max) : best;
+}
+
 export function realpathMaybe(value) {
   if (!value) return null;
   try {
@@ -117,8 +131,7 @@ export function baseLabel(base) {
 
 export function formatSkillLine(skill) {
   const n = skill.name_zh || skill.name;
-  const descRaw = skill.description_zh || skill.description;
-  const d = descRaw ? firstSentence(descRaw) : "";
+  const d = cleanSkillDesc(skill);
   if (!d) return n;
   return n + "：" + d;
 }

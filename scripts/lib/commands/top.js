@@ -5,7 +5,7 @@ import { scanRepo } from "../scan.js";
 import { parseGroupInfoV2 } from "../frontmatter.js";
 import { stateFor, saveState } from "../state.js";
 import {
-  groupIcon, realpathMaybe, shortDesc, hasChinese, firstSentence
+  groupIcon, realpathMaybe, cleanSkillDesc, hasChinese, firstSentence
 } from "../utils.js";
 import { renderPinSummary } from "./update.js";
 
@@ -17,14 +17,14 @@ function renderTopNoticeCard(group, scan, now, v2Fields) {
 
   const skillLines = scan.skills.map((s, i) => {
     const n = s.name_zh || s.name;
-    const d = shortDesc(s.description_zh || s.description);
+    const d = cleanSkillDesc(s);
     return (i + 1) + '. ' + (d ? n + '：' + d : n);
   });
 
   const skillWorkflowTarget = new Set(scan.skills.map(s => s.name_zh || s.name));
   const filteredWorkflows = scan.workflows.filter(w => !skillWorkflowTarget.has(w.name_zh || w.name)).slice(0, 3);
   const workflowLines = filteredWorkflows.map((w, i) => {
-    const d = w.description_zh ? shortDesc(w.description_zh) : shortDesc(w.description);
+    const d = cleanSkillDesc(w);
     return (i + 1) + '. ' + (d ? (w.name_zh || w.name) + '：' + d : (w.name_zh || w.name));
   });
 

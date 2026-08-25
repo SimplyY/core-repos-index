@@ -5,7 +5,7 @@ import { parseGroupInfoV2, defaultDetail, defaultTags, defaultEntryUrl } from ".
 import { stateFor, saveState } from "../state.js";
 import {
   groupIcon, realpathMaybe, statusForPath, formatSkillLine,
-  firstSentence, shortDesc, hasChinese
+  cleanSkillDesc
 } from "../utils.js";
 import { syncLinks, reverseSyncForGroup } from "../link-sync.js";
 
@@ -126,8 +126,7 @@ export function renderGroupInfo(group, scan, v2Fields, now) {
 export function renderPinSummary(group, scan, now, v2Fields) {
   const topSkills = scan.skills.map((skill, i) => {
     const n = skill.name_zh || skill.name;
-    const d = skill.description_zh || firstSentence(skill.description_zh || skill.description);
-    const s = shortDesc(d);
+    const s = cleanSkillDesc(skill);
     const prefix = scan.skills.length > 1 ? (i + 1) + ". " : "";
     return prefix + (s ? n + "：" + s : n);
   }).join("\n");
@@ -135,7 +134,7 @@ export function renderPinSummary(group, scan, now, v2Fields) {
   const filteredWorkflows = scan.workflows.filter(function(w){return !skillWorkflowTarget.has(w.name_zh||w.name);}).slice(0,2);
   const topWorkflows = filteredWorkflows.map((item, i) => {
     const prefix = filteredWorkflows.length > 1 ? (i + 1) + ". " : "";
-    const d = item.description_zh ? shortDesc(item.description_zh) : hasChinese(item.description) ? shortDesc(item.description) : item.description ? shortDesc(item.description) + "（需补充中文）" : "";
+    const d = cleanSkillDesc(item);
     return prefix + (d && d !== "未填写" ? (item.name_zh || item.name) + "：" + d : (item.name_zh || item.name));
   }).join("\n");
 

@@ -1,7 +1,8 @@
 import { parseFrontmatter, parseGroupInfoV2 } from "../frontmatter.js";
 import { buildRegistryMeta, normalizeBaseRow } from "../base.js";
-import { parseLinks } from "../utils.js";
+import { parseLinks, cleanSkillDesc, cleanSkillDescCompleteSentence } from "../utils.js";
 import { renderGroupInfo, renderPinSummary, groupInfoChanged } from "./update.js";
+import { normalizeSkillUsage, rankSkills, scopeSkillUsage } from "./top.js";
 import { renderList } from "./list.js";
 
 function assertEqual(actual, expected, label) {
@@ -90,6 +91,110 @@ export function selfTest() {
   );
   assertIncludes(summary, "【Demo 群 群信息】", "top summary title");
   assertIncludes(summary, "📍 测试定位", "top summary positioning");
+  const legacySummary = renderPinSummary(
+    { name: "demo", group_name: "Demo 群", positioning: "测试定位", repo: "/tmp/demo", links: [] },
+    { skills: [
+      { name: "legacy-a", description_zh: "旧顺序第一项" },
+      { name: "legacy-b", description_zh: "旧顺序第二项" }
+    ], workflows: [], dataSources: [], error: null },
+    "now",
+    {}
+  );
+  assertIncludes(legacySummary, "1. legacy-a：旧顺序第一项", "legacy skill order");
+  assertNotEqual(legacySummary.includes("(高)"), true, "legacy summary has no frequency suffix");
+
+  const usage = normalizeSkillUsage({
+    windows: [30],
+    profiles: [
+      { profile: "desktop", available: true },
+      { profile: "deep", available: true }
+    ],
+    skills: [
+      { name: "high", activeDays: 8, calls_by_window: { "30": 10 } },
+      { name: "high-two", activeDays: 7, calls_by_window: { "30": 9 } },
+      { name: "medium", activeDays: 3, calls_by_window: { "30": 8 } },
+      { name: "border", activeDays: 2, calls_by_window: { "30": 3 } },
+      { name: "low", activeDays: 1, calls_by_window: { "30": 2 } },
+      { name: "outside-group", activeDays: 10, calls_by_window: { "30": 100 } }
+    ]
+  });
+  const scopedUsage = scopeSkillUsage(usage, ["high", "high-two", "medium", "border", "low"]);
+  assertEqual(scopedUsage.frequencyByName.get("high-two").label, "高", "top-30 uses group scope");
+  assertEqual(scopedUsage.frequencyByName.has("outside-group"), false, "outside skill excluded from scope");
+  const rankedSkills = rankSkills([
+    { name: "low", name_zh: "低频", description_zh: "低频用途描述超过十个字" },
+    { name: "high", name_zh: "高频", description_zh: "高频用途描述用于验证三十字限制和排序。第二句不应显示" },
+    { name: "medium", name_zh: "中频", description_zh: "中频用途描述超过二十个字时应截断" },
+    { name: "border", name_zh: "边界", description_zh: "三次调用仍属于中频" }
+  ], scopedUsage);
+  assertEqual(rankedSkills.map((skill) => skill.name).join(","), "high,medium,border,low", "skill usage ranking");
+  assertEqual(rankedSkills[0].frequencyLabel, "高", "high frequency band");
+  assertEqual(rankedSkills[1].frequencyLabel, "中", "non-top-30 frequency band");
+  assertEqual(rankedSkills[2].frequencyLabel, "中", "three-call medium boundary");
+  assertEqual(rankedSkills[3].frequencyLabel, "低", "two-call low boundary");
+  assertEqual(rankedSkills[3].frequencyDescriptionMax, 10, "low description limit");
+  assertEqual(cleanSkillDesc(rankedSkills[3], rankedSkills[3].frequencyDescriptionMax), "低频用途描述超过十个", "low description truncation");
+  assertEqual(cleanSkillDesc({ description: "demo（触发词）：这是用途说明。" }), "这是用途说明", "description body extraction");
+  assertEqual(cleanSkillDesc({ description: "定时触发：每周执行" }), "定时触发：每周执行", "pure Chinese description preservation");
+  assertEqual(cleanSkillDesc({ description: "基于日常记录 Base，生成建议" }), "基于日常记录 Base，生成建议", "technical name preservation");
+  assertEqual(cleanSkillDesc({ description: "用模糊短名切换到 `path` 下已注册的仓库" }, 10), "用模糊短名切换到", "truncation ends at Chinese character");
+  assertEqual(cleanSkillDescCompleteSentence({ description: "这是完整短句。第二句不应出现" }, 10), "这是完整短句。", "complete sentence within limit");
+  assertEqual(cleanSkillDescCompleteSentence({ description: "基于候选清单和记录，生成明确建议" }, 10), "生成明确建议。", "complete clause fallback");
+  assertEqual(cleanSkillDescCompleteSentence({ description: "记录核心用途，以及补充说明" }, 10), "记录核心用途。", "reject dangling conjunction clause");
+  assertEqual(cleanSkillDescCompleteSentence({ description: "为仓库生成简洁、可执行的 AGENTS.md" }, 20), "生成 AGENTS.md。", "compress modifiers without truncation");
+  assertEqual(cleanSkillDescCompleteSentence({ description: "将口语或文本灵感自动匹配到 Write-X 正在记录的主题" }, 10), "匹配主题。", "compress to action and object");
+  assertEqual(cleanSkillDescCompleteSentence({ description: "将用户提供的图片解析为结构化的读书会思考记录" }, 20), "解析为读书会思考记录。", "prefer direct action over supporting verb");
+  assertEqual(cleanSkillDescCompleteSentence({ description: "按年缓存、按月切片：仓位/操作/偏离/品种" }, 20), "缓存仓位/操作/偏离/品种。", "carry action across label boundary");
+  assertEqual(cleanSkillDescCompleteSentence({ description: "这是一段没有任何边界而且长度超过限制的描述" }, 10), "", "no unsafe truncation");
+  assertEqual(cleanSkillDescCompleteSentence({ description: "简短用途说明" }, 10), "简短用途说明。", "short sentence completion");
+  const rankedSummary = renderPinSummary(
+    { name: "demo", group_name: "Demo 群", positioning: "测试定位", repo: "/tmp/demo", links: [] },
+    { skills: rankedSkills, workflows: [], dataSources: [], error: null },
+    "now",
+    {},
+    rankedSkills
+  );
+  assertIncludes(rankedSummary, "1. 高频 (高)", "ranked skill summary");
+  assertEqual(cleanSkillDescCompleteSentence(rankedSkills[0], 30), "高频用途描述用于验证三十字限制和排序。", "high first sentence");
+  assertNotEqual(rankedSummary.includes("第二句不应显示"), true, "high description should stop at first sentence");
+  const tieUsage = normalizeSkillUsage({
+    windows: [30],
+    profiles: [
+      { profile: "desktop", available: true },
+      { profile: "deep", available: true }
+    ],
+    skills: [
+      { name: "zeta", activeDays: 1, calls_by_window: { "30": 2 } },
+      { name: "alpha", activeDays: 1, calls_by_window: { "30": 2 } }
+    ]
+  });
+  const scopedTieUsage = scopeSkillUsage(tieUsage, ["zeta", "alpha"]);
+  assertEqual(rankSkills([{ name: "zeta" }, { name: "alpha" }], scopedTieUsage).map((skill) => skill.name).join(","), "alpha,zeta", "stable tie sorting");
+  assertThrows(() => normalizeSkillUsage({ windows: [90], profiles: [], skills: [] }), "invalid skill usage report");
+  assertThrows(() => normalizeSkillUsage({
+    windows: [30],
+    profiles: [{ profile: "desktop", available: true }, { profile: "deep", available: true }],
+    skills: [{ name: "bad", calls_by_window: { "30": null }, activeDays: 0 }]
+  }), "invalid skill usage number");
+  assertThrows(() => normalizeSkillUsage({
+    windows: [30],
+    profiles: [{ profile: "desktop", available: false }, { profile: "deep", available: true }],
+    skills: []
+  }), "incomplete profile coverage");
+  assertThrows(() => normalizeSkillUsage({
+    windows: [30],
+    profiles: [{ profile: "desktop", available: true }, { profile: "deep", available: true }],
+    skills: [{ name: " bad", calls_by_window: { "30": 1 }, activeDays: 1 }]
+  }), "invalid skill name");
+  assertThrows(() => normalizeSkillUsage({
+    windows: [30],
+    profiles: [{ profile: "desktop", available: true }, { profile: "deep", available: true }],
+    skills: [
+      { name: "dup", calls_by_window: { "30": 1 }, activeDays: 1 },
+      { name: "dup", calls_by_window: { "30": 1 }, activeDays: 1 }
+    ]
+  }), "duplicate skill name");
+  assertThrows(() => scopeSkillUsage(usage, ["missing"]), "uncovered skill usage");
 
   const markdown = renderGroupInfo(
     { ...baseGroup, repo_url: "https://github.com/SimplyY/learn-x" },

@@ -3,15 +3,16 @@
 import { spawnSync } from "node:child_process";
 import { readState, attachState } from "./lib/state.js";
 import { fetchGroupIndexGroups } from "./lib/base.js";
-import { normalizeGroupName } from "./lib/utils.js";
+import { normalizeGroupName, readJson } from "./lib/utils.js";
+import { scanRepo } from "./lib/scan.js";
 import { processGroup } from "./lib/commands/update.js";
-import { topGroup } from "./lib/commands/top.js";
+import { normalizeSkillUsage, rankSkills, scopeSkillUsage, topGroup } from "./lib/commands/top.js";
 import { renderList } from "./lib/commands/list.js";
 import { selfTest } from "./lib/commands/self-test.js";
 import { sortChatTabs } from "./lib/link-sync.js";
 
 function usage() {
-  console.log("Usage: group-info.mjs update --group <id|name> [--dry-run|--write|--apply] [--skip-if-recent] [--require-fresh] | update-all [--dry-run|--write|--apply] [--skip-if-recent] [--refresh] [--require-fresh] | top --group <id|name> --dry-run|--apply [--require-fresh] | top-all [--dry-run|--apply] [--refresh] [--require-fresh] | list [--format json|md|table] [--refresh] [--with-meta] [--require-fresh] | sort-tabs --group <id|name> [--dry-run|--apply] [--require-fresh] | sort-tabs-all [--dry-run|--apply] [--refresh] [--require-fresh] | self-test");
+  console.log("Usage: group-info.mjs update --group <id|name> [--dry-run|--write|--apply] [--skip-if-recent] [--require-fresh] | update-all [--dry-run|--write|--apply] [--skip-if-recent] [--refresh] [--require-fresh] | top --group <id|name> --dry-run|--apply [--skill-usage-file <json>] [--exclude-group <id|name>] [--require-fresh] | top-all --dry-run|--apply [--skill-usage-file <json>] [--exclude-group <id|name>] [--refresh] [--require-fresh] | list [--format json|md|table] [--refresh] [--with-meta] [--require-fresh] | sort-tabs --group <id|name> [--dry-run|--apply] [--require-fresh] | sort-tabs-all [--dry-run|--apply] [--refresh] [--require-fresh] | self-test");
 }
 
 function parseArgs(argv) {
@@ -25,6 +26,16 @@ function parseArgs(argv) {
     else if (arg === "--with-meta") args.withMeta = true;
     else if (arg === "--require-fresh") args.requireFresh = true;
     else if (arg === "--format") args.format = argv[++i];
+    else if (arg === "--exclude-group") {
+      const value = argv[i + 1];
+      if (!value || value.startsWith("--")) args.invalidExcludeGroup = true;
+      else { (args.excludeGroups ||= []).push(value); i += 1; }
+    }
+    else if (arg === "--skill-usage-file") {
+      const value = argv[i + 1];
+      if (!value || value.startsWith("--")) args.invalidSkillUsageFile = true;
+      else { args.skillUsageFile = value; i += 1; }
+    }
   }
   return args;
 }
@@ -69,6 +80,23 @@ if (args.withMeta && (args.command !== "list" || args.format !== "json")) {
   process.exit(2);
 }
 
+if (args.skillUsageFile && args.command !== "top" && args.command !== "top-all") {
+  console.error("--skill-usage-file 仅支持 top/top-all");
+  process.exit(2);
+}
+if (args.excludeGroups?.length && args.command !== "top" && args.command !== "top-all") {
+  console.error("--exclude-group 仅支持 top/top-all");
+  process.exit(2);
+}
+if (args.invalidSkillUsageFile) {
+  console.error("--skill-usage-file 必须提供 JSON 文件路径");
+  process.exit(2);
+}
+if (args.invalidExcludeGroup) {
+  console.error("--exclude-group 必须提供群组 ID 或名称");
+  process.exit(2);
+}
+
 try {
   assertMixedIdentityPolicy(args.mode);
 } catch (e) {
@@ -90,14 +118,17 @@ try {
 }
 const registry = attachState({ groups: registryData.groups, meta: registryData.meta }, state);
 const wantedGroup = normalizeGroupName(args.group);
+const excludedGroups = new Set((args.excludeGroups || []).map(normalizeGroupName));
+const isExcluded = (group) => [group.id, group.name, group.group_name]
+  .some((value) => excludedGroups.has(normalizeGroupName(value)));
 const THREE_DAYS_MS = 72 * 60 * 60 * 1000;
 
 let groups;
 if (args.command === "update-all" || args.command === "top-all" || args.command === "sort-tabs-all") {
-  groups = registry.groups.filter((group) => group.auto_update !== false);
+  groups = registry.groups.filter((group) => group.auto_update !== false && !isExcluded(group));
 } else {
   groups = registry.groups.filter((group) =>
-    group.id === wantedGroup || group.name === wantedGroup || group.group_name === wantedGroup
+    !isExcluded(group) && (group.id === wantedGroup || group.name === wantedGroup || group.group_name === wantedGroup)
   );
 }
 
@@ -114,12 +145,34 @@ if (args.skipIfRecent) {
 
 const failures = [];
 
+let skillUsage = null;
+if (args.skillUsageFile) {
+  try {
+    const usage = normalizeSkillUsage(readJson(args.skillUsageFile));
+    const scopeNames = new Set();
+    for (const group of registry.groups.filter((item) => item.auto_update !== false && !isExcluded(item))) {
+      const scan = scanRepo(group);
+      if (scan.error) throw new Error(`群 ${group.name} 无法扫描，不能计算完整群置顶 Skill 分母：${scan.error}`);
+      for (const skill of scan.skills) scopeNames.add(skill.name);
+    }
+    skillUsage = scopeSkillUsage(usage, scopeNames);
+    for (const group of groups) {
+      const scan = scanRepo(group);
+      if (scan.error) throw new Error(`群 ${group.name} 无法扫描，不能生成群置顶：${scan.error}`);
+      rankSkills(scan.skills, skillUsage);
+    }
+  } catch (error) {
+    console.error("[group-info] Skill 使用统计预检失败：" + error.message);
+    process.exit(12);
+  }
+}
+
 if (args.command === "list") {
   console.log(renderList(registry, args.format, args));
 } else if (args.command === "top" || args.command === "top-all") {
   for (const group of groups) {
     try {
-      topGroup(registry, state, group, args.mode);
+      topGroup(registry, state, group, args.mode, skillUsage);
     } catch (e) {
       console.error('群 ' + group.name + ' 置顶失败：' + e.message);
       failures.push({ group: group.name, command: 'top', error: e.message });

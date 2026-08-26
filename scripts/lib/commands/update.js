@@ -5,7 +5,7 @@ import { parseGroupInfoV2, defaultDetail, defaultTags, defaultEntryUrl } from ".
 import { stateFor, saveState } from "../state.js";
 import {
   groupIcon, realpathMaybe, statusForPath, formatSkillLine,
-  cleanSkillDesc
+  cleanSkillDesc, cleanSkillDescCompleteSentence
 } from "../utils.js";
 import { syncLinks, reverseSyncForGroup } from "../link-sync.js";
 
@@ -123,14 +123,17 @@ export function renderGroupInfo(group, scan, v2Fields, now) {
   return lines.join("\n");
 }
 
-export function renderPinSummary(group, scan, now, v2Fields) {
-  const topSkills = scan.skills.map((skill, i) => {
+export function renderPinSummary(group, scan, now, v2Fields, orderedSkills = scan.skills) {
+  const topSkills = orderedSkills.map((skill, i) => {
     const n = skill.name_zh || skill.name;
-    const s = cleanSkillDesc(skill);
+    const label = skill.frequencyLabel ? `${n} (${skill.frequencyLabel})` : n;
+    const s = skill.frequencyLabel
+      ? cleanSkillDescCompleteSentence(skill, skill.frequencyDescriptionMax || 25)
+      : cleanSkillDesc(skill, skill.frequencyDescriptionMax || 25);
     const prefix = scan.skills.length > 1 ? (i + 1) + ". " : "";
-    return prefix + (s ? n + "：" + s : n);
+    return prefix + (s ? label + "：" + s : label);
   }).join("\n");
-  const skillWorkflowTarget = new Set(scan.skills.map(function(s) { return s.name_zh || s.name; }));
+  const skillWorkflowTarget = new Set(orderedSkills.map(function(s) { return s.name_zh || s.name; }));
   const filteredWorkflows = scan.workflows.filter(function(w){return !skillWorkflowTarget.has(w.name_zh||w.name);}).slice(0,2);
   const topWorkflows = filteredWorkflows.map((item, i) => {
     const prefix = filteredWorkflows.length > 1 ? (i + 1) + ". " : "";

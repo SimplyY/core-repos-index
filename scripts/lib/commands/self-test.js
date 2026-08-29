@@ -1,9 +1,10 @@
 import { parseFrontmatter, parseGroupInfoV2 } from "../frontmatter.js";
-import { buildRegistryMeta, normalizeBaseRow } from "../base.js";
+import { buildRegistryMeta, normalizeBaseRow, normalizeBasePage, parseRegistryCache } from "../base.js";
 import { parseLinks, cleanSkillDesc, cleanSkillDescCompleteSentence } from "../utils.js";
-import { renderGroupInfo, renderPinSummary, groupInfoChanged } from "./update.js";
-import { normalizeSkillUsage, rankSkills, scopeSkillUsage } from "./top.js";
+import { renderGroupInfo, renderPinSummary, groupInfoChanged, syncAndRenderLinks } from "./update.js";
+import { normalizeSkillUsage, rankSkills, scopeSkillUsage, topGroup, topNoticeIdempotencyKey } from "./top.js";
 import { renderList } from "./list.js";
+import { parseChatTabsResponse, syncLinks } from "../link-sync.js";
 
 function assertEqual(actual, expected, label) {
   if (actual !== expected) {
@@ -36,6 +37,8 @@ export function selfTest() {
   const fm = parseFrontmatter("---\nname: demo\ndescription_zh: >-\n  第一行\n  第二行\n---\n", "fallback");
   assertEqual(fm.name, "demo", "frontmatter name");
   assertEqual(fm.description_zh, "第一行 第二行", "frontmatter block");
+  const metadataFm = parseFrontmatter("---\nname: demo\ndescription: English\nmetadata:\n  short-description: short\n  description_zh: 中文描述\n---\n", "fallback");
+  assertEqual(metadataFm.description_zh, "中文描述", "metadata description_zh");
 
   const baseGroup = normalizeBaseRow({
     "项目": "learn-x",
@@ -55,6 +58,14 @@ export function selfTest() {
   assertEqual(baseGroup.priority, 2, "base priority");
   assertEqual(baseGroup.manual_workflows[0].description_zh, "每周处理", "base workflows");
   assertEqual(parseLinks("[入口](https://example.com/x)")[0].url, "https://example.com/x", "markdown links");
+  const pageRows = normalizeBasePage({ ok: true, data: {
+    fields: ["项目"],
+    data: [["first"], ["second"]],
+    record_id_list: ["rec_first", "rec_second"],
+  }});
+  assertEqual(pageRows[1].rid, "rec_second", "base page record id uses page-local index");
+  assertThrows(() => normalizeBasePage({ ok: "false", data: { data: [], record_id_list: [] } }), "base response requires boolean ok");
+  assertThrows(() => normalizeBasePage({ ok: true, data: { fields: ["项目"], data: [["missing-id"]], record_id_list: [] } }), "base response requires record ids");
 
   const cacheMeta = buildRegistryMeta("cache", 100000, 1023456);
   assertEqual(cacheMeta.source, "cache", "cache metadata source");
@@ -67,6 +78,24 @@ export function selfTest() {
   assertEqual(liveMeta.age, 0, "live metadata age");
   assertEqual(liveMeta.degraded, false, "live metadata degraded");
   assertEqual(buildRegistryMeta("cache", 200000, 100000).age, 0, "future metadata age clamps to zero");
+  assertEqual(parseRegistryCache({ ts: "100000", groups: [] }).ts, 100000, "cache timestamp normalization");
+  assertEqual(parseRegistryCache({ ts: "not-a-time", groups: [] }), null, "invalid cache timestamp rejected");
+  assertEqual(parseRegistryCache({ ts: true, groups: [] }), null, "non-numeric cache timestamp rejected");
+  assertThrows(() => buildRegistryMeta("stale-cache", "not-a-time"), "invalid metadata timestamp rejected");
+  assertEqual(parseChatTabsResponse(JSON.stringify({ ok: true, data: { chat_tabs: [] } }), "demo").length, 0, "chat tabs response parse");
+  assertThrows(() => parseChatTabsResponse(JSON.stringify({ ok: true, data: {} }), "demo"), "chat tabs response must include tabs");
+  assertThrows(() => parseChatTabsResponse(JSON.stringify({ ok: "false", data: { chat_tabs: [] } }), "demo"), "chat tabs response requires boolean ok");
+  const topKey = topNoticeIdempotencyKey({ id: "group-index", chat_id: "oc_demo" }, "summary");
+  assertEqual(topKey, topNoticeIdempotencyKey({ id: "group-index", chat_id: "oc_demo" }, "summary"), "top notice idempotency stable");
+  assertNotEqual(topKey, topNoticeIdempotencyKey({ id: "group-index", chat_id: "oc_demo" }, "changed"), "top notice idempotency changes with summary");
+  assertEqual(topKey.length <= 50, true, "top notice idempotency length");
+  assertThrows(() => topGroup({}, {}, { name: "unbound", repo_path: null, chat_id: null }, "dry-run"), "top without chat id fails closed");
+  assertThrows(() => topGroup({}, {}, { name: "unavailable", repo_path: null, chat_id: "oc_demo" }, "dry-run"), "top with incomplete scan fails closed");
+  const missingRecord = syncAndRenderLinks({ repo_path: ".", record_id: "", links: [] }, "apply");
+  assertEqual(missingRecord.ok, false, "missing record id stops before reverse sync");
+  assertEqual(missingRecord.summary, "缺少 Base record_id，已停止所有写入", "missing record id summary");
+  const noReadmeLinks = syncLinks("", "", [{ name: "existing", url: "https://example.com" }], "apply");
+  assertEqual(noReadmeLinks.ok, true, "no README links is a confirmed no-op");
 
   const staleMeta = buildRegistryMeta("stale-cache", 100000, 1023456);
   assertEqual(staleMeta.degraded, true, "stale cache metadata degraded");
@@ -82,6 +111,37 @@ export function selfTest() {
   assertEqual(groupInfoChanged(null, newMarkdown), true, "missing GROUP_INFO requires write");
   assertEqual(groupInfoChanged(oldMarkdown, newMarkdown), false, "timestamp-only GROUP_INFO change");
   assertEqual(groupInfoChanged(oldMarkdown, newMarkdown.replace("正文", "正文已变更")), true, "semantic GROUP_INFO change");
+
+  const registryMeta = {
+    source: "live",
+    fetched_at: "2026-08-21T00:00:00.000Z",
+    age: 42,
+    degraded: false,
+  };
+  const metadataMarkdown = renderGroupInfo(
+    { ...baseGroup, repo_url: "https://github.com/SimplyY/learn-x" },
+    { skills: [], workflows: [], dataSources: [], error: null },
+    {},
+    "2026-08-21T00:01:00.000Z",
+    registryMeta
+  );
+  assertIncludes(metadataMarkdown, 'registry_source: "live"', "registry source frontmatter");
+  assertIncludes(metadataMarkdown, 'registry_fetched_at: "2026-08-21T00:00:00.000Z"', "registry fetched_at frontmatter");
+  assertIncludes(metadataMarkdown, "registry_age_seconds: 42", "registry age frontmatter");
+  assertIncludes(metadataMarkdown, "- 注册表新鲜度：可用", "registry freshness status");
+  const metadataAgeChanged = metadataMarkdown
+    .replace("registry_age_seconds: 42", "registry_age_seconds: 99")
+    .replace("约 42 秒前读取", "约 99 秒前读取");
+  assertEqual(groupInfoChanged(metadataMarkdown, metadataAgeChanged), false, "registry age-only change");
+  const degradedMarkdown = renderGroupInfo(
+    { ...baseGroup, repo_url: "https://github.com/SimplyY/learn-x" },
+    { skills: [], workflows: [], dataSources: [], error: null },
+    {},
+    "2026-08-21T00:01:00.000Z",
+    { ...registryMeta, source: "stale-cache", degraded: true }
+  );
+  assertIncludes(degradedMarkdown, "- 注册表新鲜度：降级，禁止据此执行高风险写入", "degraded registry status");
+  assertEqual(groupInfoChanged(metadataMarkdown, degradedMarkdown), true, "registry source change");
 
   const summary = renderPinSummary(
     { name: "demo", group_name: "Demo 群", positioning: "测试定位", repo: "/tmp/demo", links: [] },

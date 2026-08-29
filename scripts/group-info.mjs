@@ -144,6 +144,7 @@ if (args.skipIfRecent) {
 }
 
 const failures = [];
+const updateSucceeded = new Set();
 
 let skillUsage = null;
 if (args.skillUsageFile) {
@@ -189,9 +190,14 @@ if (args.command === "list") {
     if (args.mode === "dry-run") {
       console.log(`${group.name}: dry-run — 将排序标签页（消息 → 链接 → 系统标签 → GitHub）`);
     } else {
-      console.log(`${group.name}: 排序中…`);
-      sortChatTabs(chatId);
-      console.log(`${group.name}: 完成`);
+      try {
+        console.log(`${group.name}: 排序中…`);
+        if (!sortChatTabs(chatId)) throw new Error("标签页排序未确认成功");
+        console.log(`${group.name}: 完成`);
+      } catch (e) {
+        console.error(`${group.name}: 标签页排序失败：${e.message}`);
+        failures.push({ group: group.name, command: "sort-tabs", error: e.message });
+      }
     }
   }
 } else {
@@ -202,6 +208,7 @@ if (args.command === "list") {
   for (const group of groups) {
     try {
       const result = processGroup(registry, state, group, args.mode);
+      if (args.command === "update-all" && args.mode === "apply") updateSucceeded.add(group.id || group.name);
       console.log(`\n${result.group} :: ${result.mode} :: ${result.target || "no target"} ===\n`);
       console.log("----- GROUP_INFO.md -----");
       console.log(result.markdown);
@@ -216,6 +223,7 @@ if (args.command === "list") {
   if (args.command === 'update-all' && args.mode === 'apply') {
     console.log('\n=== update-all 完成，自动执行 top-all ===\n');
     for (const group of groups) {
+      if (!updateSucceeded.has(group.id || group.name)) continue;
       try {
         topGroup(registry, state, group, args.mode);
       } catch (e) {

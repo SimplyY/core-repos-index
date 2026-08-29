@@ -9,7 +9,7 @@ import {
 } from "../utils.js";
 import { syncLinks, reverseSyncForGroup } from "../link-sync.js";
 
-export function renderGroupInfo(group, scan, v2Fields, now) {
+export function renderGroupInfo(group, scan, v2Fields, now, registryMeta = null) {
   const repoPath = realpathMaybe(group.repo_path || group.repo);
   const groupInfoPath = group.group_info_path || (repoPath ? join(repoPath, "GROUP_INFO.md") : null);
   const hasLinks = group.links && group.links.length > 0;
@@ -42,6 +42,12 @@ export function renderGroupInfo(group, scan, v2Fields, now) {
   lines.push("repo_path: " + JSON.stringify(repoPath));
   lines.push("repo_url: " + JSON.stringify(group.repo_url || null));
   lines.push("group_info_path: " + JSON.stringify(groupInfoPath));
+  if (registryMeta) {
+    lines.push("registry_source: " + JSON.stringify(registryMeta.source || "unknown"));
+    lines.push("registry_fetched_at: " + JSON.stringify(registryMeta.fetched_at || null));
+    lines.push("registry_age_seconds: " + Number(registryMeta.age || 0));
+    lines.push("registry_degraded: " + Boolean(registryMeta.degraded));
+  }
   lines.push("updated_at: " + JSON.stringify(now));
   lines.push("icon: " + JSON.stringify(icon));
   lines.push("name_zh: " + JSON.stringify(nameZh));
@@ -65,6 +71,10 @@ export function renderGroupInfo(group, scan, v2Fields, now) {
   if (group.repo_url) lines.push("- 代码仓库：" + group.repo_url);
   if (hasLinks) { group.links.forEach(function(link) { lines.push("- 链接：" + (link.name || "") + " → " + (link.url || "")); }); }
   lines.push("- 默认机器人：" + (group.bot || "未在群注册表中记录"));
+  if (registryMeta) {
+    const sourceLabel = registryMeta.degraded ? "降级缓存" : (registryMeta.source || "未知");
+    lines.push("- 注册表来源：" + sourceLabel + "，约 " + Number(registryMeta.age || 0) + " 秒前读取");
+  }
 
   if (calibration) {
     lines.push("");
@@ -117,6 +127,7 @@ export function renderGroupInfo(group, scan, v2Fields, now) {
   lines.push("- 工作目录：" + statusForPath(group.repo));
   if (hasLinks) lines.push("- 链接数：" + group.links.length);
   lines.push("- Skill 扫描：" + (scan.error ? "异常：" + scan.error : "正常"));
+  if (registryMeta) lines.push("- 注册表新鲜度：" + (registryMeta.degraded ? "降级，禁止据此执行高风险写入" : "可用"));
   lines.push("- 最近更新时间：" + now);
   lines.push("");
 
@@ -160,6 +171,9 @@ export function renderPinSummary(group, scan, now, v2Fields, orderedSkills = sca
 export function normalizeGeneratedTimestamps(markdown) {
   return markdown
     .replace(/^updated_at:\s*.*$/m, "updated_at: <generated>")
+    .replace(/^registry_fetched_at:\s*.*$/m, "registry_fetched_at: <generated>")
+    .replace(/^registry_age_seconds:\s*.*$/m, "registry_age_seconds: <generated>")
+    .replace(/(^- 注册表来源：[^，\n]+)，约 \d+ 秒前读取$/m, "$1，约 <generated> 秒前读取")
     .replace(/^- 最近更新时间：.*$/m, "- 最近更新时间：<generated>");
 }
 
@@ -174,6 +188,9 @@ export function processGroup(registry, state, group, mode) {
 
   // 从仓库 README 提取链接，同步到 Base 和群标签页
   const linkResult = syncAndRenderLinks(group, mode);
+  if ((mode === "write" || mode === "apply") && linkResult.error) {
+    throw new Error(`链接同步失败：${linkResult.error}`);
+  }
   if (linkResult.linksForRender) {
     group.links = linkResult.linksForRender;
   }
@@ -188,7 +205,7 @@ export function processGroup(registry, state, group, mode) {
     } catch (e) { /* ignore */ }
   }
 
-  const markdown = renderGroupInfo(group, scan, v2Fields, now);
+  const markdown = renderGroupInfo(group, scan, v2Fields, now, registry.meta);
   const summary = renderPinSummary(group, scan, now, v2Fields);
   const changed = groupInfoChanged(existingMarkdown, markdown);
 
@@ -217,8 +234,28 @@ export function processGroup(registry, state, group, mode) {
  * 然后用提取的链接替换 group.links 供后续渲染。
  */
 export function syncAndRenderLinks(group, mode) {
+  if ((mode === "write" || mode === "apply") && !group.record_id) {
+    return {
+      links: group.links || [],
+      linksForRender: null,
+      ok: false,
+      error: "缺少 Base record_id",
+      summary: "缺少 Base record_id，已停止所有写入",
+    };
+  }
+
   // 1. 反向同步：从 Base/标签页拉回 README，确保 README 是最全的链接集合
   const reverse = reverseSyncForGroup(group, mode);
+  if ((mode === "write" || mode === "apply") && !reverse.ok) {
+    return {
+      links: group.links || [],
+      linksForRender: null,
+      reverseSync: reverse,
+      ok: false,
+      error: reverse.reason || "反向链接同步失败",
+      summary: "反向链接同步失败，已停止正向写入",
+    };
+  }
 
   // 2. 正向同步：从 README（可能已更新）提取链接 → Base + 标签页
   const existingLinks = group.links || [];

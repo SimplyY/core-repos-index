@@ -6,7 +6,11 @@ group_name: "group-Index"
 repo_path: "/Users/yuwei/code/group-index"
 repo_url: null
 group_info_path: "/Users/yuwei/code/group-index/GROUP_INFO.md"
-updated_at: "2026-08-23T00:00:38.415Z"
+registry_source: "live"
+registry_fetched_at: "2026-08-29T03:22:34.783Z"
+registry_age_seconds: 0
+registry_degraded: false
+updated_at: "2026-08-29T03:22:41.865Z"
 icon: "🏠"
 name_zh: "Group Index"
 summary: "项目入口中枢，管理越来越多的个人项目。用 group index 多维表格管理所有项目的人工判断字段，通过群置顶卡片实现项目概览。"
@@ -30,6 +34,7 @@ todos: ["将工作流、待办、备注等扫描不出来的人脑字段维护�
 - 链接：group index 文档 → https://ywhome.feishu.cn/docx/QOW9dLI9hoL4CyxkJvUcaeEsnXe
 - 链接：GitHub → https://github.com/SimplyY/group-index
 - 默认机器人：Codex / Code X bot
+- 注册表来源：live，约 0 秒前读取
 
 ## 数据源
 - group index 多维表格：https://ywhome.feishu.cn/base/AxMAbMTKOahp74sDuhqcERnrnph
@@ -49,4 +54,5 @@ todos: ["将工作流、待办、备注等扫描不出来的人脑字段维护�
 - 工作目录：可访问
 - 链接数：4
 - Skill 扫描：正常
-- 最近更新时间：2026-08-23T00:00:38.415Z
+- 注册表新鲜度：可用
+- 最近更新时间：2026-08-29T03:22:41.865Z

@@ -34,15 +34,36 @@ export function normalizeBaseRow(row, recordId) {
   };
 }
 
+export function normalizeBasePage(data) {
+  if (data?.ok !== true) throw new Error("Base 响应未确认成功");
+  const fields = data?.data?.fields || groupIndexFields;
+  const pageRows = data?.data?.data || [];
+  const recordIds = data?.data?.record_id_list || [];
+  if (!Array.isArray(recordIds) || pageRows.some((_, index) => !recordIds[index])) {
+    throw new Error("Base 响应缺少记录 ID");
+  }
+  return pageRows.map((row, index) => {
+    const item = {};
+    fields.forEach((field, fieldIndex) => { item[field] = row[fieldIndex]; });
+    return { item, rid: recordIds[index] };
+  });
+}
+
 const CACHE_PATH = join(__dirname, "..", "..", "group_cache.json");
 const CACHE_TTL_MS = 2 * 60 * 60 * 1000; // 2 小时
+
+export function parseRegistryCache(raw) {
+  const value = raw?.ts;
+  if (typeof value !== "number" && typeof value !== "string") return null;
+  const ts = Number(value);
+  if (!Number.isFinite(ts) || ts <= 0 || !Array.isArray(raw?.groups)) return null;
+  return { ...raw, ts };
+}
 
 function readCache() {
   if (!existsSync(CACHE_PATH)) return null;
   try {
-    const raw = JSON.parse(readFileSync(CACHE_PATH, "utf8"));
-    if (!raw || !raw.ts || !Array.isArray(raw.groups)) return null;
-    return raw;
+    return parseRegistryCache(JSON.parse(readFileSync(CACHE_PATH, "utf8")));
   } catch {
     return null;
   }
@@ -65,10 +86,12 @@ function getFromCache() {
 }
 
 export function buildRegistryMeta(source, fetchedAt, now = Date.now()) {
-  const age = Math.max(0, Math.floor((now - fetchedAt) / 1000));
+  const timestamp = Number(fetchedAt);
+  if (!Number.isFinite(timestamp) || timestamp <= 0) throw new Error("注册表时间戳无效");
+  const age = Math.max(0, Math.floor((Number(now) - timestamp) / 1000));
   return {
     source,
-    fetched_at: new Date(fetchedAt).toISOString(),
+    fetched_at: new Date(timestamp).toISOString(),
     age,
     degraded: source === "stale-cache",
   };
@@ -127,15 +150,9 @@ export function fetchGroupIndexGroups(opts = {}) {
     let data;
     try {
       data = JSON.parse(result.stdout);
+      rows.push(...normalizeBasePage(data));
     } catch (error) {
       return fallbackOrThrow(11, "解析 group index 多维表格响应失败：" + error.message);
-    }
-    const fields = data?.data?.fields || groupIndexFields;
-    for (const row of data?.data?.data || []) {
-      const item = {};
-      fields.forEach((field, index) => { item[field] = row[index]; });
-      const rid = (data?.data?.record_id_list || [])[rows.length] || "";
-      rows.push({ item, rid });
     }
     if (!data?.data?.has_more) break;
     offset += 200;

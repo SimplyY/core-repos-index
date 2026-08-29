@@ -1,6 +1,22 @@
 export function parseFrontmatter(text, fallbackName) {
   const match = text.match(/^---\n([\s\S]*?)\n---/);
   if (!match) return { name: fallbackName, name_zh: fallbackName, description: "", description_zh: "" };
+  let metadataDescriptionZh = "";
+  let inMetadata = false;
+  for (const line of match[1].split("\n")) {
+    if (/^metadata:[ \t]*$/.test(line)) {
+      inMetadata = true;
+      continue;
+    }
+    if (inMetadata && /^[A-Za-z0-9_-]+:[ \t]*/.test(line)) inMetadata = false;
+    if (inMetadata) {
+      const metadataLine = line.match(/^\s+description_zh:\s*(.*)$/);
+      if (metadataLine) {
+        metadataDescriptionZh = metadataLine[1].replace(/^['"]|['"]$/g, "");
+        break;
+      }
+    }
+  }
   const fields = {};
   const lines = match[1].split("\n");
   let lastKey = null;
@@ -32,7 +48,7 @@ export function parseFrontmatter(text, fallbackName) {
     name: fields.name || fallbackName,
     name_zh: fields.name_zh || fields.name || fallbackName,
     description: fields.description || "",
-    description_zh: fields.description_zh || fields.description || ""
+    description_zh: fields.description_zh || metadataDescriptionZh || fields.description || ""
   };
 }
 

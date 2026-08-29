@@ -17,11 +17,12 @@ async function main() {
   const { groups } = fetchGroupIndexGroups({ refresh: true, requireFresh });
 
   const results = [];
+  const failures = [];
 
   for (const g of groups) {
     const repoPath = g.repo_path || g.repo;
     if (!repoPath || !existsSync(repoPath)) {
-      results.push({ name: g.name, status: "skip", reason: "无仓库路径" });
+      results.push({ name: g.name, status: "skip", newCount: 0, reason: "无仓库路径" });
       continue;
     }
 
@@ -34,6 +35,7 @@ async function main() {
       newCount: r.newLinks.length,
       reason: r.reason,
     });
+    if (!r.ok) failures.push({ name: g.name, reason: r.reason || "反向链接同步失败" });
 
     console.error(`\n=== ${g.name} ===`);
     console.error(`  ${r.reason}`);
@@ -41,8 +43,12 @@ async function main() {
 
   console.error("\n\n=== 汇总 ===");
   for (const r of results) {
-    const icon = r.status === "ok" ? "✅" : r.status === "unchanged" ? "🔍" : "⚠️";
+    const icon = r.status === "ok" ? "✅" : r.status === "unchanged" ? "🔍" : r.status === "skip" ? "⏭️" : "⚠️";
     console.error(`${icon} ${r.name}: ${r.status} | 新增=${r.newCount}${r.reason ? " | " + r.reason : ""}`);
+  }
+  if (failures.length > 0) {
+    console.error(`反向链接同步失败：${failures.length} 个群`);
+    process.exitCode = 1;
   }
 }
 

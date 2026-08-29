@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { scanRepo } from "../scan.js";
 import { parseGroupInfoV2 } from "../frontmatter.js";
 import { stateFor, saveState } from "../state.js";
@@ -12,6 +13,10 @@ import { renderPinSummary } from "./update.js";
 const USAGE_WINDOW_DAYS = 30;
 const LOW_FREQUENCY_CALLS = 3;
 const HIGH_FREQUENCY_SHARE = 0.3;
+
+function commandError(result) {
+  return result?.stderr || result?.stdout || result?.error?.message || "未知错误";
+}
 
 function usageNumber(value, label) {
   if (typeof value !== "number" || !Number.isInteger(value) || value < 0) {
@@ -86,8 +91,8 @@ export function rankSkills(skills, usage) {
 }
 
 function orderedSkillsFor(scan, skillUsage) {
-  if (!skillUsage) return scan.skills;
   if (scan.error) throw new Error(`Skill 扫描失败：${scan.error}`);
+  if (!skillUsage) return scan.skills;
   return rankSkills(scan.skills, skillUsage);
 }
 
@@ -159,6 +164,15 @@ function topSummaryUnchanged(group, summary) {
   return oldSummary === summary;
 }
 
+export function topNoticeIdempotencyKey(group, summary) {
+  const digest = createHash("sha256")
+    .update(String(group.chat_id || group.id || group.name || ""))
+    .update("\0")
+    .update(String(summary || ""))
+    .digest("hex");
+  return `gi-${digest.slice(0, 47)}`;
+}
+
 export function topGroup(registry, state, group, mode, skillUsage = null) {
   const now = new Date().toISOString();
   const scan = scanRepo(group);
@@ -202,6 +216,7 @@ export function topGroup(registry, state, group, mode, skillUsage = null) {
 
   const card = renderTopNoticeCard(group, scan, now, v2Fields, orderedSkills);
   const cardJson = JSON.stringify(card);
+  const idempotencyKey = topNoticeIdempotencyKey(group, summary);
 
   console.log("发送卡片到群 " + chatId + " ...");
   const sendResult = spawnSync("lark-cli", [
@@ -210,11 +225,12 @@ export function topGroup(registry, state, group, mode, skillUsage = null) {
     "--chat-id", chatId,
     "--content", cardJson,
     "--msg-type", "interactive",
+    "--idempotency-key", idempotencyKey,
     "--format", "json"
   ], { encoding: "utf8", maxBuffer: 10 * 1024 * 1024 });
 
   if (sendResult.status !== 0) {
-    const err4 = "发送卡片失败：" + (sendResult.stderr || sendResult.stdout);
+    const err4 = "发送卡片失败：" + commandError(sendResult);
     console.error(err4);
     throw new Error(err4);
   }
@@ -226,6 +242,11 @@ export function topGroup(registry, state, group, mode, skillUsage = null) {
     const err5 = "解析发送响应失败：" + sendResult.stdout;
     console.error(err5);
     throw new Error(err5);
+  }
+  if (sendData?.ok !== true) {
+    const err5b = "发送卡片响应未确认成功：" + sendResult.stdout;
+    console.error(err5b);
+    throw new Error(err5b);
   }
 
   const messageId = sendData?.data?.message_id || sendData?.message_id;
@@ -248,8 +269,10 @@ export function topGroup(registry, state, group, mode, skillUsage = null) {
     "--format", "json"
   ], { encoding: "utf8", maxBuffer: 10 * 1024 * 1024 });
 
-  if (topResult.status !== 0) {
-    const err7 = "群置顶失败：" + (topResult.stderr || topResult.stdout);
+  let topData;
+  try { topData = JSON.parse(topResult.stdout); } catch { topData = null; }
+  if (topResult.status !== 0 || topData?.ok !== true) {
+    const err7 = "群置顶失败：" + commandError(topResult);
     console.error(err7);
     throw new Error(err7);
   }

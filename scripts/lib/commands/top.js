@@ -18,6 +18,50 @@ function commandError(result) {
   return result?.stderr || result?.stdout || result?.error?.message || "未知错误";
 }
 
+function pinTopNotice(chatId, messageId) {
+  const topNoticeData = JSON.stringify({
+    chat_top_notice: [{ action_type: "1", message_id: messageId }]
+  });
+  const result = spawnSync("lark-cli", [
+    "api", "POST",
+    "/open-apis/im/v1/chats/" + chatId + "/top_notice/put_top_notice",
+    "--as", "bot",
+    "--data", topNoticeData,
+    "--format", "json"
+  ], { encoding: "utf8", maxBuffer: 10 * 1024 * 1024 });
+  let data;
+  try { data = JSON.parse(result.stdout); } catch { data = null; }
+  if (result.status !== 0 || data?.ok !== true) {
+    return { ok: false, error: commandError(result) };
+  }
+  return { ok: true };
+}
+
+function readBackTopMessage(chatId, messageId) {
+  const result = spawnSync("lark-cli", [
+    "im", "+messages-mget",
+    "--message-ids", messageId,
+    "--as", "bot",
+    "--no-reactions",
+    "--format", "json",
+  ], { encoding: "utf8", maxBuffer: 2 * 1024 * 1024 });
+  if (result.status !== 0) return { ok: false, error: commandError(result) };
+  let data;
+  try { data = JSON.parse(result.stdout); } catch { return { ok: false, error: "消息读回响应不是有效 JSON" }; }
+  if (data?.ok !== true) return { ok: false, error: data?.error?.message || "消息读回响应未确认成功" };
+  const message = (data.data?.messages || []).find((item) => item?.message_id === messageId);
+  if (!message) return { ok: false, error: "读回消息 ID 不匹配或消息不存在" };
+  if (message.chat_id !== chatId) return { ok: false, error: "读回消息群 ID 不匹配" };
+  if (message.deleted === true) return { ok: false, error: "读回消息已被删除" };
+  return { ok: true, messageType: message.msg_type || "" };
+}
+
+function confirmTopReceipt(chatId, messageId) {
+  const readback = readBackTopMessage(chatId, messageId);
+  if (!readback.ok) return readback;
+  return { ok: true, verification: "message-readback", messageType: readback.messageType };
+}
+
 function usageNumber(value, label) {
   if (typeof value !== "number" || !Number.isInteger(value) || value < 0) {
     throw new Error(`Skill 使用统计 ${label} 无效`);
@@ -194,6 +238,40 @@ export function topGroup(registry, state, group, mode, skillUsage = null) {
     throw new Error(err3);
   }
 
+  const runtime = stateFor(state, group);
+  const pendingMessageId = runtime.top_notice_pending_message_id;
+  if (pendingMessageId) {
+    if (runtime.top_notice_pending_chat_id !== chatId || runtime.top_notice_pending_summary !== summary) {
+      throw new Error("存在未完成的群置顶回执，摘要或群已变化；已停止重复发送，请先人工核对 message_id=" + pendingMessageId);
+    }
+    if (mode !== "apply") {
+      console.log("\n=== " + group.name + " :: top-notice-pending ===");
+      console.log("存在待恢复置顶 message_id=" + pendingMessageId + "，dry-run 未执行恢复");
+      return;
+    }
+    console.log("检测到待恢复置顶回执，重试置顶，不重复发送...");
+    const retry = pinTopNotice(chatId, pendingMessageId);
+    if (!retry.ok) {
+      throw new Error("恢复群置顶失败：" + retry.error + "；message_id=" + pendingMessageId);
+    }
+    const receipt = confirmTopReceipt(chatId, pendingMessageId);
+    if (!receipt.ok) {
+      throw new Error("恢复群置顶后消息读回未确认：" + receipt.error + "；message_id=" + pendingMessageId);
+    }
+    delete runtime.top_notice_pending_message_id;
+    delete runtime.top_notice_pending_chat_id;
+    delete runtime.top_notice_pending_summary;
+    delete runtime.top_notice_pending_at;
+    runtime.top_notice_message_id = pendingMessageId;
+    runtime.top_notice_message_verified_at = now;
+    runtime.top_notice_verification = receipt.verification;
+    runtime.last_topped_at = now;
+    runtime.last_top_summary = summary;
+    saveState(state);
+    console.log("待恢复消息已群置顶，state 已更新：top_notice_message_id=" + pendingMessageId);
+    return;
+  }
+
   if (topSummaryUnchanged(group, summary)) {
     console.log("\n=== " + group.name + " :: top-notice-skip ===");
     console.log("群置顶摘要内容无变化，跳过置顶");
@@ -257,24 +335,26 @@ export function topGroup(registry, state, group, mode, skillUsage = null) {
   }
   console.log("卡片已发送，message_id: " + messageId);
 
-  console.log("群置顶消息 ...");
-  const topNoticeData = JSON.stringify({
-    chat_top_notice: [{ action_type: "1", message_id: messageId }]
-  });
-  const topResult = spawnSync("lark-cli", [
-    "api", "POST",
-    "/open-apis/im/v1/chats/" + chatId + "/top_notice/put_top_notice",
-    "--as", "bot",
-    "--data", topNoticeData,
-    "--format", "json"
-  ], { encoding: "utf8", maxBuffer: 10 * 1024 * 1024 });
+  runtime.top_notice_pending_message_id = messageId;
+  runtime.top_notice_pending_chat_id = chatId;
+  runtime.top_notice_pending_summary = summary;
+  runtime.top_notice_pending_at = now;
+  saveState(state);
+  console.log("已保存待置顶回执：message_id=" + messageId);
 
-  let topData;
-  try { topData = JSON.parse(topResult.stdout); } catch { topData = null; }
-  if (topResult.status !== 0 || topData?.ok !== true) {
-    const err7 = "群置顶失败：" + commandError(topResult);
+  console.log("群置顶消息 ...");
+  const topResult = pinTopNotice(chatId, messageId);
+  if (!topResult.ok) {
+    const err7 = "群置顶失败：" + topResult.error + "；已保存待恢复 message_id=" + messageId;
     console.error(err7);
     throw new Error(err7);
+  }
+
+  const receipt = confirmTopReceipt(chatId, messageId);
+  if (!receipt.ok) {
+    const err8 = "群置顶请求已接受但消息读回未确认：" + receipt.error + "；已保存待恢复 message_id=" + messageId;
+    console.error(err8);
+    throw new Error(err8);
   }
 
   console.log("消息已群置顶");
@@ -302,8 +382,13 @@ export function topGroup(registry, state, group, mode, skillUsage = null) {
       console.log("--- END_AGENT_DIFF ---");
     }
   }
-  const runtime = stateFor(state, group);
+  delete runtime.top_notice_pending_message_id;
+  delete runtime.top_notice_pending_chat_id;
+  delete runtime.top_notice_pending_summary;
+  delete runtime.top_notice_pending_at;
   runtime.top_notice_message_id = messageId;
+  runtime.top_notice_message_verified_at = now;
+  runtime.top_notice_verification = receipt.verification;
   runtime.last_topped_at = now;
   runtime.last_top_summary = summary;
   saveState(state);

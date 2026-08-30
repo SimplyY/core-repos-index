@@ -1,6 +1,6 @@
-import { existsSync } from "node:fs";
+import { existsSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import { statePath } from "./fields.js";
-import { readJson, writeJson } from "./utils.js";
+import { readJson } from "./utils.js";
 
 export function readState() {
   if (!existsSync(statePath)) return { groups: {} };
@@ -21,5 +21,12 @@ export function attachState(registry, state) {
 }
 
 export function saveState(state) {
-  writeJson(statePath, state);
+  const tmpPath = `${statePath}.${process.pid}.tmp`;
+  try {
+    writeFileSync(tmpPath, `${JSON.stringify(state, null, 2)}\n`);
+    renameSync(tmpPath, statePath);
+  } catch (error) {
+    try { unlinkSync(tmpPath); } catch { /* preserve the original write error */ }
+    throw error;
+  }
 }

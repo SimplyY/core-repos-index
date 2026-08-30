@@ -23,7 +23,7 @@
 - 不再维护静态网站；多维表格截图或链接就是分享入口。
 - 新项目表单必须登录；Workflow 只允许指定创建者，并只把 `record_id` 送入 Agent，不传用户填写文本。
 - `初始化状态`是 new-repo 的持久队列：`待处理`可认领、`处理中`防并发、`成功`和`需处理`不可自动重跑。
-- Skill 描述规范：普通群展示只取描述中的中文主体，截到最后一个中文字符、限 25 字；月度频率置顶按最近 30 天调用动态分档：先汇总所有可访问注册群的去重 Skill，调用少于 3 次为低频，剩余 Skill 按调用次数、活跃天数和名称排序，前 30% 为高频，其余为中频；低/中/高描述分别限 10/20/30 字，先保留完整首句，超限时压缩括号注释和低信息修饰，抽取完整的“动作 + 对象”语义单元，不按字符硬截断；没有可用完整文本时只显示 Skill 名。群 Skill 汇总不完整时必须停止发送。无中文只显示 Skill 名不显示描述。新建或维护 skill 时应提供 ≤25 字中文 `description_zh`，避免纯英文描述导致群里退化成无描述。
+- Skill 描述规范：普通群展示只取描述中的中文主体，截到最后一个中文字符、限 25 字；月度频率置顶按 30 天窗口调用动态分档：先汇总所有可访问注册群的去重 Skill，调用少于 3 次为低频，剩余 Skill 按调用次数、活跃天数和名称排序，前 30% 为高频，其余为中频；低/中/高描述分别限 10/20/30 字，先保留完整首句，超限时压缩括号注释和低信息修饰，抽取完整的“动作 + 对象”语义单元，不按字符硬截断；没有可用完整文本时只显示 Skill 名。群 Skill 汇总不完整时必须停止发送。无中文只显示 Skill 名不显示描述。新建或维护 skill 时应提供 ≤25 字中文 `description_zh`，避免纯英文描述导致群里退化成无描述。
 
 ## 关键文件
 
@@ -50,7 +50,7 @@ node scripts/group-info.mjs list --format json --with-meta --require-fresh
 node scripts/group-info.mjs update --group group-index --dry-run
 
 # 更新单个 GROUP_INFO.md
-# --apply 自动要求实时读取，Base 失败时不会进入写入流程
+# --apply 自动要求实时读取，先预检标签页，Base 失败时不会进入写入流程
 node scripts/group-info.mjs update --group group-index --apply
 
 # 更新全部 GROUP_INFO.md
@@ -62,7 +62,7 @@ node scripts/group-info.mjs top --group group-index --apply
 # 全量群发卡片 + 置顶
 node scripts/group-info.mjs top-all --apply
 
-# 使用 skill-thinking 最近 30 天聚合报告进行频率排序
+# 使用 skill-thinking 30 天窗口聚合报告进行频率排序
 node scripts/group-info.mjs top-all --apply --refresh --require-fresh --skill-usage-file <usage.json>
 
 # 临时排除不可访问群（排除项不进入分母，也不发送）
@@ -70,12 +70,18 @@ node scripts/group-info.mjs top-all --apply --refresh --require-fresh --skill-us
 
 # 自检
 node scripts/group-info.mjs self-test
+
+# 飞书 CLI 前置诊断（只读）
+lark-cli doctor
+lark-cli update --check --json
 ```
 
 ## 群置顶边界
 
 - 群置顶走 `top` 子命令：发卡片 + 置顶。
 - 每个群都需要群置顶，不由多维表格字段控制。
+- 卡片发送成功后先保存待置顶回执；置顶失败时下次只重试置顶、不重复发卡片，摘要或群变化则停止并要求人工核对。
+- 置顶请求成功后必须用 `im +messages-mget` 读回相同 `message_id`、`chat_id` 且未删除，作为消息存在性收据；该收据不等同于顶栏 UI 已可查询。
 - 是否更新置顶，继续由原有摘要对比逻辑决定。
 - 不新增“群置顶展示”之类字段。
 - 月度频率排序只消费 `skill-thinking --windows 30 --format json` 的 Desktop/Deep 聚合结果，不展示调用次数；调用次数降序、活跃天数降序、Skill 名稳定排序。频率标签在所有可访问注册群的去重 Skill 集合上计算后复用到各群，避免把全局安装 Skill 或单个群单独取 Top 30% 导致高频过多。
@@ -89,6 +95,7 @@ node scripts/group-info.mjs self-test
 4. 修改后至少运行 `node scripts/group-info.mjs self-test`。
 5. 涉及飞书写入、群消息发送、批量更新时，先跑 dry-run。
 6. `--apply` 开始前会只读预检 lark-cli 身份策略；当前 profile 必须为 `user-default`（`strict-mode off`、`default-as auto`），不符则退出不写入。
+7. 真实 canary 前还需确认 `lark-cli doctor` 为 `ok=true`；`update --check` 若提示版本或 Skill 文档漂移，只记录为风险，未经确认不得执行全局升级。
 
 ## neatall / neat-freak 执行规则
 
@@ -121,10 +128,13 @@ node scripts/group-info.mjs self-test
 3. 同步到 Base「链接」字段（Markdown 格式，`group-info` 可读）。
 4. 同步到群标签页（doc/url 类型，飞书客户端可见）。
 
+Feishu 链接操作前先判目标类型：先用 `lark-base +url-resolve` 解析 `base/wiki/record-share` URL，再按 `resource_type` 选择 Docx（`lark-doc`）或 Base/bitable（`lark-base`）；`wiki` 外观不保证是 Docx；若 resolver 明确返回“resolves to docx, not Base”，应改用 `docs +fetch`，不能判为链接失效；仅当 `docs +fetch` 返回 `Unsupported document type 'bitable'` 时才切换 Base 路由，不得当作文档故障。
+
 ### 维护流转
 
 - **用户**：在仓库 README.md 中维护核心链接，重要链接放前面。
 - **Agent**：`group-info update` 时自动提取 → 同步到 Base + 群标签页 → 渲染到 GROUP_INFO.md。
+- **完成证据**：`--apply` 先预检标签页；Base 写入须通过目标记录「链接」字段精确读回，标签页写入须通过 URL、名称和类型读回，群置顶须读回消息 ID/群 ID/删除状态；任一环节未确认即停止后续写入。消息读回不代表顶栏 UI 已有可查询接口。
 - **AGENTS.md**：如果某链接需要长期维护但不在 README 中，Agent 应提示用户将其写入 README（或 README 的「核心资产」段落）。
 - **不自动删除**：Base 和群标签页中手动添加的链接不会被自动删除，只做增量添加和名称更新。
 

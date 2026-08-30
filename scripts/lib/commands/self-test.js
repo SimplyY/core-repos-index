@@ -4,7 +4,8 @@ import { parseLinks, cleanSkillDesc, cleanSkillDescCompleteSentence } from "../u
 import { renderGroupInfo, renderPinSummary, groupInfoChanged, syncAndRenderLinks } from "./update.js";
 import { normalizeSkillUsage, rankSkills, scopeSkillUsage, topGroup, topNoticeIdempotencyKey } from "./top.js";
 import { renderList } from "./list.js";
-import { parseChatTabsResponse, syncLinks } from "../link-sync.js";
+import { parseChatTabsResponse, syncLinks, syncLinksToBase, syncLinksToChatTabs, verifyChatTabs } from "../link-sync.js";
+import { runTopRecoveryProbe } from "./self-test-probes.js";
 
 function assertEqual(actual, expected, label) {
   if (actual !== expected) {
@@ -85,17 +86,84 @@ export function selfTest() {
   assertEqual(parseChatTabsResponse(JSON.stringify({ ok: true, data: { chat_tabs: [] } }), "demo").length, 0, "chat tabs response parse");
   assertThrows(() => parseChatTabsResponse(JSON.stringify({ ok: true, data: {} }), "demo"), "chat tabs response must include tabs");
   assertThrows(() => parseChatTabsResponse(JSON.stringify({ ok: "false", data: { chat_tabs: [] } }), "demo"), "chat tabs response requires boolean ok");
+  assertEqual(verifyChatTabs([{ tab_type: "url", tab_name: "probe", tab_content: { url: "https://example.com" } }], [{ name: "probe", url: "https://example.com" }]).ok, true, "chat tab readback accepts matching tab");
+  assertEqual(verifyChatTabs([], [{ name: "probe", url: "https://example.com" }]).ok, false, "chat tab readback rejects missing tab");
   const topKey = topNoticeIdempotencyKey({ id: "group-index", chat_id: "oc_demo" }, "summary");
   assertEqual(topKey, topNoticeIdempotencyKey({ id: "group-index", chat_id: "oc_demo" }, "summary"), "top notice idempotency stable");
   assertNotEqual(topKey, topNoticeIdempotencyKey({ id: "group-index", chat_id: "oc_demo" }, "changed"), "top notice idempotency changes with summary");
   assertEqual(topKey.length <= 50, true, "top notice idempotency length");
   assertThrows(() => topGroup({}, {}, { name: "unbound", repo_path: null, chat_id: null }, "dry-run"), "top without chat id fails closed");
   assertThrows(() => topGroup({}, {}, { name: "unavailable", repo_path: null, chat_id: "oc_demo" }, "dry-run"), "top with incomplete scan fails closed");
+  runTopRecoveryProbe();
   const missingRecord = syncAndRenderLinks({ repo_path: ".", record_id: "", links: [] }, "apply");
   assertEqual(missingRecord.ok, false, "missing record id stops before reverse sync");
   assertEqual(missingRecord.summary, "缺少 Base record_id，已停止所有写入", "missing record id summary");
   const noReadmeLinks = syncLinks("", "", [{ name: "existing", url: "https://example.com" }], "apply");
   assertEqual(noReadmeLinks.ok, true, "no README links is a confirmed no-op");
+  const originalPath = process.env.PATH;
+  const originalError = console.error;
+  const originalWarn = console.warn;
+  let processFailure;
+  try {
+    process.env.PATH = "/nonexistent";
+    console.error = () => {};
+    processFailure = syncLinksToBase("rec_probe", [{ name: "probe", url: "https://example.com" }], "apply");
+  } finally {
+    process.env.PATH = originalPath;
+    console.error = originalError;
+  }
+  assertEqual(processFailure.ok, false, "Base process failure stops write");
+  assertIncludes(processFailure.error, "ENOENT", "Base process failure preserves error");
+  const missingBaseId = syncLinksToBase("", [{ name: "probe", url: "https://example.com" }], "apply");
+  assertEqual(missingBaseId.ok, false, "direct Base writer rejects missing record id");
+  assertEqual(missingBaseId.error, "缺少 Base record_id", "direct Base writer missing id error");
+  let preflightFailure;
+  try {
+    process.env.PATH = "/nonexistent";
+    console.error = () => {};
+    syncLinks({ repo_path: ".", chat_id: "oc_probe" }, "rec_probe", [], "apply");
+  } catch (error) {
+    preflightFailure = error;
+  } finally {
+    process.env.PATH = originalPath;
+    console.error = originalError;
+  }
+  assertIncludes(preflightFailure?.message || "", "标签页失败", "chat tab preflight runs before Base write");
+  let tabFailure;
+  try {
+    process.env.PATH = "/nonexistent";
+    console.error = () => {};
+    console.warn = () => {};
+    tabFailure = syncLinksToChatTabs({ chat_id: "oc_probe" }, [
+      { name: "first-renamed", url: "https://first.example", type: "url" },
+      { name: "second", url: "https://second.example", type: "url" },
+    ], "apply", [
+      { tab_id: "tab-1", tab_name: "first", tab_type: "url", tab_content: { url: "https://first.example" } },
+      { tab_id: "tab-2", tab_name: "second", tab_type: "url", tab_content: { url: "https://second.example" } },
+    ]);
+  } finally {
+    process.env.PATH = originalPath;
+    console.error = originalError;
+    console.warn = originalWarn;
+  }
+  assertEqual(tabFailure.updated, 0, "tab update failure reports no successful updates");
+  assertEqual(tabFailure.error, "更新标签页失败：first-renamed", "tab update failure stops later writes");
+  let addFailure;
+  try {
+    process.env.PATH = "/nonexistent";
+    console.error = () => {};
+    console.warn = () => {};
+    addFailure = syncLinksToChatTabs({ chat_id: "oc_probe" }, [
+      { name: "first", url: "https://first.example" },
+      { name: "second", url: "https://second.example" },
+    ], "apply", []);
+  } finally {
+    process.env.PATH = originalPath;
+    console.error = originalError;
+    console.warn = originalWarn;
+  }
+  assertEqual(addFailure.added, 0, "tab add failure reports no successful additions");
+  assertEqual(addFailure.error, "添加标签页失败：first", "tab add failure stops later writes");
 
   const staleMeta = buildRegistryMeta("stale-cache", 100000, 1023456);
   assertEqual(staleMeta.degraded, true, "stale cache metadata degraded");

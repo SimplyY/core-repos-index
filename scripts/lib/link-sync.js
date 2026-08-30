@@ -233,6 +233,7 @@ export function mergeLinks(readmeLinks, existingBaseLinks) {
 // ── Base 写入 ──
 
 export function syncLinksToBase(recordId, links, mode) {
+  if (mode !== "dry-run" && !recordId) return { ok: false, dryRun: false, text: "", error: "缺少 Base record_id" };
   const text = formatLinksForBase(links);
   if (mode === "dry-run") return { ok: true, dryRun: true, text };
   const args = [
@@ -250,8 +251,9 @@ export function syncLinksToBase(recordId, links, mode) {
     env: { ...process.env, LARKSUITE_CLI_NO_UPDATE_NOTIFIER: "1", LARKSUITE_CLI_NO_SKILLS_NOTIFIER: "1" },
   });
   if (result.status !== 0) {
-    console.error("[link-sync] Base 写入失败：", result.stderr || result.stdout);
-    return { ok: false, dryRun: false, text, error: result.stderr || result.stdout };
+    const detail = commandError(result);
+    console.error("[link-sync] Base 写入失败：", detail);
+    return { ok: false, dryRun: false, text, error: detail };
   }
   let response;
   try { response = JSON.parse(result.stdout); } catch {
@@ -260,7 +262,41 @@ export function syncLinksToBase(recordId, links, mode) {
   if (response?.ok !== true) {
     return { ok: false, dryRun: false, text, error: response?.error?.message || "Base 写入响应未确认成功" };
   }
+  const readback = readBackBaseLinks(recordId, text);
+  if (!readback.ok) {
+    return { ok: false, dryRun: false, text, error: "Base 写入后读回未确认：" + readback.error };
+  }
   return { ok: true, dryRun: false, text };
+}
+
+function readBackBaseLinks(recordId, expectedText) {
+  const result = spawnSync("lark-cli", [
+    "base", "+record-get",
+    "--base-token", groupIndexBaseToken,
+    "--table-id", groupIndexTableId,
+    "--record-id", recordId,
+    "--field-id", "链接",
+    "--as", "user",
+    "--format", "json",
+  ], {
+    encoding: "utf8",
+    maxBuffer: 2 * 1024 * 1024,
+    env: { ...process.env, LARKSUITE_CLI_NO_UPDATE_NOTIFIER: "1", LARKSUITE_CLI_NO_SKILLS_NOTIFIER: "1" },
+  });
+  if (result.status !== 0) return { ok: false, error: commandError(result) };
+  let response;
+  try { response = JSON.parse(result.stdout); } catch { return { ok: false, error: "读回响应不是有效 JSON" }; }
+  if (response?.ok !== true) return { ok: false, error: response?.error?.message || "读回响应未确认成功" };
+  const data = response.data || {};
+  const recordIds = data.record_id_list || [];
+  const rows = data.data;
+  const firstRow = Array.isArray(rows) ? rows[0] : rows && typeof rows === "object" ? (rows["0"] ?? rows[0]) : null;
+  const value = Array.isArray(firstRow)
+    ? firstRow[0]
+    : data.records?.[0]?.fields?.链接;
+  if (!recordIds.includes(recordId)) return { ok: false, error: "读回记录 ID 不匹配" };
+  if (value !== expectedText) return { ok: false, error: "读回链接内容不一致" };
+  return { ok: true };
 }
 
 // ── 群标签页 ──
@@ -315,6 +351,22 @@ function docTabContent(linkType, url) {
   return { [docTabType(linkType)]: url };
 }
 
+export function verifyChatTabs(tabs, links) {
+  const available = (tabs || []).filter((tab) => tab.tab_type === "doc" || tab.tab_type === "url");
+  const seen = new Set();
+  for (const link of links) {
+    const canonical = normalizeUrl(link.url);
+    if (seen.has(canonical)) continue;
+    seen.add(canonical);
+    const match = available.find((tab) => normalizeUrl(tab.tab_content?.[tab.tab_type] || "") === canonical);
+    if (!match) return { ok: false, error: `读回缺少标签页：${link.name}` };
+    if (match.tab_name !== link.name) {
+      return { ok: false, error: `读回标签页不一致：${link.name}` };
+    }
+  }
+  return { ok: true };
+}
+
 function addChatTab(chatId, tab) {
   const body = JSON.stringify({ chat_tabs: [tab] });
   const result = spawnSync("lark-cli", [
@@ -353,11 +405,11 @@ function updateChatTab(chatId, tabId, name, url, linkType) {
 /**
  * 同步链接到群标签页，并在最后调用 sort_tabs 将链接标签页移到「消息」之后。
  */
-export function syncLinksToChatTabs(group, links, mode) {
+export function syncLinksToChatTabs(group, links, mode, existingTabs = null) {
   const chatId = group.chat_id;
   if (!chatId) return { ok: false, added: 0, updated: 0, deleted: 0, dryRun: mode === "dry-run", error: "无 chat_id" };
 
-  const existing = fetchChatTabs(chatId);
+  const existing = existingTabs || fetchChatTabs(chatId);
   const existingDocUrl = existing.filter((t) => t.tab_type === "doc" || t.tab_type === "url");
 
   // 构建现有标签的 canonical → tab 映射
@@ -384,10 +436,16 @@ export function syncLinksToChatTabs(group, links, mode) {
       const existingContent = existingTab.tab_content?.[existingTab.tab_type] || "";
       const urlChanged = existingContent !== l.url;
       const nameChanged = existingTab.tab_name !== l.name;
+      const typeChanged = existingTab.tab_type !== docTabType(type);
+      // 飞书禁止原地修改标签页类型；类型不符的旧标签无法修正，URL 已匹配则保持现状。
+      if (typeChanged) continue;
       // README 是链接名称权威来源，名字或 URL 不一致都以 README 为准更新
       if (urlChanged || nameChanged) {
-        if (mode === "apply" && !updateChatTab(chatId, existingTab.tab_id, l.name, l.url, type)) {
-          errors.push(`更新标签页失败：${l.name}`);
+        if (mode === "apply") {
+          if (!updateChatTab(chatId, existingTab.tab_id, l.name, l.url, type)) {
+            errors.push(`更新标签页失败：${l.name}`);
+            break;
+          }
         }
         updated++;
       }
@@ -398,15 +456,26 @@ export function syncLinksToChatTabs(group, links, mode) {
           tab_type: docTabType(type),
           tab_content: docTabContent(type, l.url),
         });
-        if (!ok) errors.push(`添加标签页失败：${l.name}`);
+        if (!ok) {
+          errors.push(`添加标签页失败：${l.name}`);
+          break;
+        }
       }
       added++;
     }
   }
 
-  // 全部新增/更新完成后，排序（sortChatTabs 内部自动去重）
-  if (mode === "apply") {
+  // 只有新增/更新全部成功后才排序；失败后停止后续外部写入。
+  if (mode === "apply" && errors.length === 0) {
     if (!sortChatTabs(chatId)) errors.push("排序标签页失败");
+    if (errors.length === 0) {
+      try {
+        const readback = verifyChatTabs(fetchChatTabs(chatId), links);
+        if (!readback.ok) errors.push(readback.error);
+      } catch (error) {
+        errors.push("读回标签页失败：" + error.message);
+      }
+    }
   }
 
   return {
@@ -655,6 +724,8 @@ export function syncLinks(group, recordId, existingBaseLinks, mode) {
 
   const mergedLinks = mergeLinks(readmeLinks, existingBaseLinks || []);
 
+  // 先完成标签页读取 preflight，避免 Base 已写入后才发现群权限/网络不可用。
+  const existingTabs = group.chat_id ? fetchChatTabs(group.chat_id) : null;
   const baseResult = recordId ? syncLinksToBase(recordId, mergedLinks, mode) : null;
   if (mode !== "dry-run" && baseResult && !baseResult.ok) {
     return {
@@ -666,7 +737,7 @@ export function syncLinks(group, recordId, existingBaseLinks, mode) {
       summary: "Base 写入失败，已停止标签页同步",
     };
   }
-  const tabsResult = group.chat_id ? syncLinksToChatTabs(group, readmeLinks, mode) : null;
+  const tabsResult = group.chat_id ? syncLinksToChatTabs(group, readmeLinks, mode, existingTabs) : null;
   if (mode !== "dry-run" && tabsResult && !tabsResult.ok) {
     return {
       links: mergedLinks,

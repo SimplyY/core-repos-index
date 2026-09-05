@@ -2,10 +2,11 @@ import { parseFrontmatter, parseGroupInfoV2 } from "../frontmatter.js";
 import { buildRegistryMeta, normalizeBaseRow, normalizeBasePage, parseRegistryCache } from "../base.js";
 import { parseLinks, cleanSkillDesc, cleanSkillDescCompleteSentence } from "../utils.js";
 import { renderGroupInfo, renderPinSummary, groupInfoChanged, syncAndRenderLinks } from "./update.js";
-import { normalizeSkillUsage, rankSkills, scopeSkillUsage, topGroup, topNoticeIdempotencyKey } from "./top.js";
+import { assertSkillUsageForApply, normalizeSkillUsage, rankSkills, scopeSkillUsage, renderTopNoticeCard, topGroup, topNoticeIdempotencyKey } from "./top.js";
 import { renderList } from "./list.js";
 import { parseChatTabsResponse, syncLinks, syncLinksToBase, syncLinksToChatTabs, verifyChatTabs } from "../link-sync.js";
 import { runTopRecoveryProbe } from "./self-test-probes.js";
+import { modelSkillDescription, readSkillDescriptions } from "../skill-descriptions.js";
 
 function assertEqual(actual, expected, label) {
   if (actual !== expected) {
@@ -230,6 +231,36 @@ export function selfTest() {
   );
   assertIncludes(legacySummary, "1. legacy-a：旧顺序第一项", "legacy skill order");
   assertNotEqual(legacySummary.includes("(高)"), true, "legacy summary has no frequency suffix");
+  assertThrows(() => assertSkillUsageForApply("apply", null), "apply requires skill usage");
+  const descriptionAsset = readSkillDescriptions();
+  assertEqual(Object.keys(descriptionAsset).length >= 60, true, "model description asset covers current skill set");
+  for (const [name, row] of Object.entries(descriptionAsset)) {
+    for (const [band, max] of [["low", 20], ["medium", 30], ["high", 40]]) {
+      const description = row[`description_zh_${band}`] || row.description_zh;
+      if (typeof description !== "string" || !description.trim() || Array.from(description.trim()).length > max) {
+        throw new Error(`模型描述资产的 ${band} 档位无效：${name}`);
+      }
+    }
+  }
+  assertThrows(() => modelSkillDescription({ name: "missing-skill", description_zh: "不存在" }, 20), "missing model description fails closed");
+  assertThrows(() => modelSkillDescription({ name: "quick-cd", description_zh: "已变化" }, 20), "stale model description fails closed");
+  const legacyLongScan = {
+    skills: [{ name: "legacy-long", description_zh: "在资产更新同步成功后生成正式飞书资产报告。用于生成人类可读结果" }],
+    workflows: [], dataSources: [], error: null
+  };
+  const legacyLongSummary = renderPinSummary(
+    { name: "demo", group_name: "Demo 群", positioning: "测试定位", repo: "/tmp/demo", links: [] },
+    legacyLongScan, "now", {}
+  );
+  assertIncludes(legacyLongSummary, "在资产更新同步成功后生成正式飞书资产报告。", "legacy summary keeps complete sentence");
+  assertNotEqual(legacyLongSummary.includes("用于生成人类可读结果"), true, "legacy summary stops at sentence boundary");
+  const legacyLongCard = renderTopNoticeCard(
+    { name: "demo", positioning: "测试定位", repo: "/tmp/demo", links: [] },
+    legacyLongScan, "now", {}
+  );
+  const legacyLongCardText = legacyLongCard.body.elements.map((element) => element.content || "").join("\n");
+  assertIncludes(legacyLongCardText, "在资产更新同步成功后生成正式飞书资产报告。", "legacy card keeps complete sentence");
+  assertNotEqual(legacyLongCardText.includes("用于生成人类可读结果"), true, "legacy card stops at sentence boundary");
 
   const usage = normalizeSkillUsage({
     windows: [30],
@@ -260,8 +291,13 @@ export function selfTest() {
   assertEqual(rankedSkills[1].frequencyLabel, "中", "non-top-30 frequency band");
   assertEqual(rankedSkills[2].frequencyLabel, "中", "three-call medium boundary");
   assertEqual(rankedSkills[3].frequencyLabel, "低", "two-call low boundary");
-  assertEqual(rankedSkills[3].frequencyDescriptionMax, 10, "low description limit");
-  assertEqual(cleanSkillDesc(rankedSkills[3], rankedSkills[3].frequencyDescriptionMax), "低频用途描述超过十个", "low description truncation");
+  assertEqual(rankedSkills[0].frequencyDescriptionMax, 40, "high description limit");
+  assertEqual(rankedSkills[1].frequencyDescriptionMax, 30, "medium description limit");
+  assertEqual(rankedSkills[3].frequencyDescriptionMax, 20, "low description limit");
+  const lowDescription = cleanSkillDescCompleteSentence({ description: "生成每周飞书机器人 Build 复盘报告" }, rankedSkills[3].frequencyDescriptionMax);
+  assertEqual(lowDescription, "生成 Build 复盘报告。", "low description keeps useful complete sentence");
+  assertEqual(Array.from(lowDescription).length > 5, true, "low description exceeds minimum length");
+  assertEqual(cleanSkillDesc(rankedSkills[3], 10), "低频用途描述超过十个", "legacy hard truncation helper remains explicit");
   assertEqual(cleanSkillDesc({ description: "demo（触发词）：这是用途说明。" }), "这是用途说明", "description body extraction");
   assertEqual(cleanSkillDesc({ description: "定时触发：每周执行" }), "定时触发：每周执行", "pure Chinese description preservation");
   assertEqual(cleanSkillDesc({ description: "基于日常记录 Base，生成建议" }), "基于日常记录 Base，生成建议", "technical name preservation");
@@ -273,6 +309,9 @@ export function selfTest() {
   assertEqual(cleanSkillDescCompleteSentence({ description: "将口语或文本灵感自动匹配到 Write-X 正在记录的主题" }, 10), "匹配主题。", "compress to action and object");
   assertEqual(cleanSkillDescCompleteSentence({ description: "将用户提供的图片解析为结构化的读书会思考记录" }, 20), "解析为读书会思考记录。", "prefer direct action over supporting verb");
   assertEqual(cleanSkillDescCompleteSentence({ description: "按年缓存、按月切片：仓位/操作/偏离/品种" }, 20), "缓存仓位/操作/偏离/品种。", "carry action across label boundary");
+  assertEqual(cleanSkillDescCompleteSentence({ description: "生成投资复盘事实底稿，并按“机器草案→对话确认→对象感知的一手证据→八席审查”两阶段维护独立的飞鱼投资委员会附录。" }, 40), "生成投资复盘事实底稿，并按两阶段维护独立的飞鱼投资委员会附录。", "ignore quoted action when compressing");
+  assertEqual(cleanSkillDescCompleteSentence({ description: "链接自动抓取、内容质量判断、卡片回复" }, 40), "链接自动抓取、内容质量判断、卡片回复。", "prefer full useful clause when no frequency minimum is met");
+  assertNotEqual(cleanSkillDescCompleteSentence({ description: "查询投资资产和操作记录，任何涉及投资资产的问题都走这个 skill，不生成买卖建议。" }, 40).includes("生成买卖建议"), true, "ignore negated actions");
   assertEqual(cleanSkillDescCompleteSentence({ description: "这是一段没有任何边界而且长度超过限制的描述" }, 10), "", "no unsafe truncation");
   assertEqual(cleanSkillDescCompleteSentence({ description: "简短用途说明" }, 10), "简短用途说明。", "short sentence completion");
   const rankedSummary = renderPinSummary(
@@ -322,6 +361,12 @@ export function selfTest() {
       { name: "dup", calls_by_window: { "30": 1 }, activeDays: 1 }
     ]
   }), "duplicate skill name");
+  assertThrows(() => normalizeSkillUsage({
+    windows: [30],
+    profiles: [{ profile: "desktop", available: true }, { profile: "deep", available: true }],
+    skills: [],
+    warnings: ["source incomplete"]
+  }), "warnings fail closed");
   assertThrows(() => scopeSkillUsage(usage, ["missing"]), "uncovered skill usage");
 
   const markdown = renderGroupInfo(

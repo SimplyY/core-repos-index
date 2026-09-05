@@ -138,9 +138,7 @@ export function renderPinSummary(group, scan, now, v2Fields, orderedSkills = sca
   const topSkills = orderedSkills.map((skill, i) => {
     const n = skill.name_zh || skill.name;
     const label = skill.frequencyLabel ? `${n} (${skill.frequencyLabel})` : n;
-    const s = skill.frequencyLabel
-      ? cleanSkillDescCompleteSentence(skill, skill.frequencyDescriptionMax || 25)
-      : cleanSkillDesc(skill, skill.frequencyDescriptionMax || 25);
+    const s = skill.modelDescription || cleanSkillDescCompleteSentence(skill, skill.frequencyDescriptionMax || 25);
     const prefix = scan.skills.length > 1 ? (i + 1) + ". " : "";
     return prefix + (s ? label + "：" + s : label);
   }).join("\n");

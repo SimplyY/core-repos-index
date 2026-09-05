@@ -132,7 +132,7 @@ const DESCRIPTION_ACTIONS = [
   "生成", "创建", "记录", "查看", "检查", "统计", "处理", "执行", "管理", "维护",
   "读取", "分析", "同步", "审查", "转换", "推送", "评估", "提供", "获取", "整理",
   "筛选", "研究", "解析", "更新", "发送", "切换", "启动", "重置", "复制", "汇总", "缓存", "匹配",
-  "推理", "提醒", "评分", "编排", "治理", "调用", "判断", "监控", "部署", "搜索",
+  "推理", "提醒", "评分", "编排", "治理", "调用", "判断", "监控", "部署", "搜索", "输出",
   "导入", "导出", "采集"
 ];
 
@@ -144,9 +144,11 @@ function isStandaloneClause(text) {
 }
 
 function findActions(text) {
+  const searchable = text.replace(/[“「《\"].*?[”」》\"]/g, (quoted) => " ".repeat(quoted.length));
   return DESCRIPTION_ACTIONS
-    .map((word) => ({ word, index: text.indexOf(word) }))
+    .map((word) => ({ word, index: searchable.indexOf(word) }))
     .filter((item) => item.index >= 0)
+    .filter((item) => !/[不未无非]$/.test(searchable.slice(0, item.index).trim()))
     .sort((a, b) => a.index - b.index || b.word.length - a.word.length);
 }
 
@@ -175,7 +177,10 @@ function actionCore(part, action) {
 }
 
 function compressedClauses(text) {
-  const normalized = removeParenthetical(text).replace(/\s+/g, " ").trim();
+  const normalized = removeParenthetical(text)
+    .replace(/[“「《\"].*?[”」》\"]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
   const compact = normalized
     .replace(/简洁、可执行的\s*/g, "")
     .replace(/完整的\s*/g, "")
@@ -189,6 +194,8 @@ function compressedClauses(text) {
   const parts = compact.split(/[，,：:；;]/).map((clause) => clause.trim()).filter(Boolean);
   let previousActions = [];
   for (const part of parts) {
+    const standalonePart = part.replace(/^(以及|并且|并|且|和|或|而|但)\s*/, "").trim();
+    candidates.push(standalonePart, compactObject(standalonePart));
     const actions = findActions(part);
     for (const action of actions) {
       const suffix = part.slice(action.index + action.word.length).trim();
@@ -224,6 +231,10 @@ function descriptionScore(text) {
   return (startsWithAction ? 1000 : 0) + chinese * 10 + Array.from(text).length;
 }
 
+function descriptionMinimum(max) {
+  return max === 40 ? 21 : max === 30 ? 11 : max === 20 ? 6 : 0;
+}
+
 // 频率置顶专用：只输出完整句子或动作 + 对象语义单元，不按字符硬切。
 export function cleanSkillDescCompleteSentence(skill, max = 25) {
   const raw = String(skill.description_zh || skill.description || "").trim();
@@ -241,18 +252,25 @@ export function cleanSkillDescCompleteSentence(skill, max = 25) {
   const terminator = first && first[2] && first[2] !== "\n" ? first[2] : "";
   const firstSentence = ((first && first[1]) || body).trim() + terminator;
   const exact = completeWithin(firstSentence, max);
-  if (exact && isUsefulDescription(exact)) return exact;
+  const minimum = descriptionMinimum(max);
+  if (exact && isUsefulDescription(exact) && Array.from(exact).length >= minimum) return exact;
 
   const contents = [firstSentence.replace(/[。！？；;]$/, ""), ...body.split(/[。！？；;]/).slice(1)];
+  const candidates = [];
   for (const content of contents) {
-    const best = compressedClauses(content)
+    candidates.push(...compressedClauses(content)
       .filter(isStandaloneClause)
       .map((clause) => completeWithin(clause, max))
-      .filter((candidate) => candidate && isUsefulDescription(candidate))
-      .sort((a, b) => descriptionScore(b) - descriptionScore(a))[0];
-    if (best) return best;
+      .filter((candidate) => candidate && isUsefulDescription(candidate)));
   }
-  return "";
+  const best = candidates
+    .sort((a, b) => {
+      const aMeets = Array.from(a).length >= minimum;
+      const bMeets = Array.from(b).length >= minimum;
+      if (aMeets || bMeets) return Number(bMeets) - Number(aMeets) || descriptionScore(b) - descriptionScore(a);
+      return Array.from(b).length - Array.from(a).length || descriptionScore(b) - descriptionScore(a);
+    })[0];
+  return best || (exact && isUsefulDescription(exact) ? exact : "");
 }
 
 export function realpathMaybe(value) {

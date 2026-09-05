@@ -1,0 +1,328 @@
+{
+  "version": 1,
+  "generator": "model-batch-2026-09-04",
+  "skills": {
+    "article-decode": {
+      "source_sha256": "f0dcb05be0097f637bf314d77a94ede85da6389f8b13a1e3ab166cfe9d325fc8",
+      "description_zh": "独立解码长文的问题、结构、前提与盲点",
+      "description_zh_low": "解码长文结构与盲点",
+      "description_zh_high": "独立解码长文的问题、结构、前提与盲点"
+    },
+    "asset-report": {
+      "source_sha256": "127c1cc0d3f19628ea1c87d278428b8e582af4b5da8a1b7896214e96bca67760",
+      "description_zh": "比较确认资产快照与历史报告，生成资产配置与操作洞察并写入知识库",
+      "description_zh_low": "比较资产快照并生成配置洞察",
+      "description_zh_medium": "比较资产快照并生成配置洞察",
+      "description_zh_high": "比较确认资产快照与历史报告，生成资产配置与操作洞察并写入知识库"
+    },
+    "base-time-group": {
+      "source_sha256": "385370455cb36f3bcd7a0c2c47201b7eb7343f3842101917846bc6f0bde7e1a4",
+      "description_zh": "为多维表格新增年月周字段并配置层级视图分组",
+      "description_zh_low": "配置多维表格时间分组"
+    },
+    "book-x": {
+      "source_sha256": "95ed87f63871e531218d4c4de545932f12d80d07c54e066087091b1c589bf694",
+      "description_zh": "处理速读精读与读书笔记，沉淀图文和精读文档",
+      "description_zh_low": "处理读书笔记并沉淀文档"
+    },
+    "buffett-investment-framework": {
+      "source_sha256": "d7493fa548d9606d58af6774a5f937941bd6dda68997c2b29090fe4f8ac8b273",
+      "description_zh": "用65张框架卡审查企业财务、估值与失效条件，不给交易建议",
+      "description_zh_low": "审查企业财务估值及失效条件"
+    },
+    "build-bot-log": {
+      "source_sha256": "c426e31df0276a54474bcb6749b6af13db9e442ba1070ef2e1a027fa69adf74c",
+      "description_zh": "生成每周飞书机器人 Build 复盘报告",
+      "description_zh_low": "生成每周 Build 复盘报告",
+      "description_zh_high": "生成每周飞书机器人 Build 复盘与风险报告"
+    },
+    "content-scoring": {
+      "source_sha256": "b81189d77cdd07c402246e1c3129a6e5e56717fd1a906f83352a02110cb76ef2",
+      "description_zh": "匿名评估文章质量，隔离计算个人相关性并确定精读路由",
+      "description_zh_low": "评估文章质量并确定精读路由"
+    },
+    "create-agents-md": {
+      "source_sha256": "1ab9e27b55b14bb7fe361f7e5f8d6ce42dcf2335648d689ed15e9adaf5ae900a",
+      "description_zh": "为仓库生成或更新 AGENTS.md，明确入口、边界与验证",
+      "description_zh_low": "生成或更新仓库规则文档"
+    },
+    "diffall": {
+      "source_sha256": "3e99becaf2a0c974f690c183ab5e066bcaac1642d0fe3e5f2809736897f79d92",
+      "description_zh": "汇总注册仓库的未提交改动并生成审查摘要",
+      "description_zh_low": "汇总仓库改动并生成审查摘要",
+      "description_zh_high": "汇总注册仓库未提交改动并生成审查摘要供人工复核"
+    },
+    "duan-business-review": {
+      "source_sha256": "6d691cf4aef595aaec13616fc06aa16684a74a74e2ad1fd8bd9a8488035acf4a",
+      "description_zh": "审查企业差异化、文化与能力圈，不给交易或投票结论",
+      "description_zh_low": "审查企业差异化与能力圈"
+    },
+    "feiyu-poetry-review": {
+      "source_sha256": "0bb69fce23ab854d17ace6e623989753252985108a63b0122cdf57c888bea572",
+      "description_zh": "固定评分赏析群聊诗歌，把评分、来源与摘要归档到 Base",
+      "description_zh_low": "评分赏析诗歌并归档摘要"
+    },
+    "fund-calibration": {
+      "source_sha256": "7fc75662422726cfa28263cbec8941a4e79e8660ff1ac6128f8c564f2c4f31ff",
+      "description_zh": "筛选大额基金，对照基准、收益与风险生成校准月报",
+      "description_zh_low": "校准基金收益与风险"
+    },
+    "github-intelligence": {
+      "source_sha256": "72c881a0f63c2748383a317afcc5dddb346b312085a02e9c2230391f3a63ea78",
+      "description_zh": "发现并核验 GitHub 项目，生成月度情报榜单与分级报告",
+      "description_zh_low": "核验 GitHub 项目并生成情报榜单"
+    },
+    "global-governance": {
+      "source_sha256": "4ba88486fa05334208b5524f2f3fd482f62d715ec5354b51cd3ef1d120594642",
+      "description_zh": "审计个人AI系统与治理规则，形成运行风险报告",
+      "description_zh_low": "审计 AI 系统并生成风险报告"
+    },
+    "health-weekly": {
+      "source_sha256": "853639bdc796b0540e804dba6ea697b86336cae446875df78d86cb90e9a4c907",
+      "description_zh": "校验健康周报数据，写入飞书并同步健康洞察到 Learn-X",
+      "description_zh_low": "校验健康周报并同步洞察"
+    },
+    "image-ocr": {
+      "source_sha256": "1981cd882a3aae9cd5a1e6440a023deb247567c85050575f008df209e359e18c",
+      "description_zh": "读取 Bridge 注入的图片 OCR 文本供后续处理",
+      "description_zh_low": "读取图片 OCR 文本"
+    },
+    "institutional-opposition-review": {
+      "source_sha256": "9c3ca8b014f23c1abc098239e7438d8bdc8871bb9774f9499fa611f3b85d0ce3",
+      "description_zh": "从宏观周期、论点证伪与尾部风险提供独立反对审查",
+      "description_zh_low": "提供投资反对审查"
+    },
+    "invest-event-watch": {
+      "source_sha256": "4adaba6c08c4e7ac7fcbec63b31bd6a9f71fc22a60326e2cac8076f8e6dbb7ef",
+      "description_zh": "追踪重大投资事件与长期投资者操作，生成可追溯条件式报告",
+      "description_zh_low": "追踪投资事件并生成条件报告"
+    },
+    "invest-op-record": {
+      "source_sha256": "8b56e065dfb8e96fad26f48b4e6355707716118df37761e15f0157191ad6722a",
+      "description_zh": "把交易操作与实时点位写入投资操作表",
+      "description_zh_low": "写入投资操作与实时点位",
+      "description_zh_high": "把交易操作与实时点位写入投资操作表"
+    },
+    "invest-peek": {
+      "source_sha256": "c31dc62565eb7783fca85fa81147cda1c17dc2e836c1ade03c9bd9156e1985d2",
+      "description_zh": "只读查询投资资产、持仓与操作的多时间切片",
+      "description_zh_low": "查询投资资产与操作记录",
+      "description_zh_high": "只读查询投资资产、持仓与操作的多时间切片"
+    },
+    "invest-review": {
+      "source_sha256": "b309904b9b8e15628e3d2921e08d0ebed6e94e6b19df202d3b58d939d2e7bde3",
+      "description_zh": "生成投资复盘事实底稿，组织两阶段证据审查，不输出交易指令",
+      "description_zh_low": "生成投资复盘底稿并审查证据"
+    },
+    "learn-x-input": {
+      "source_sha256": "f2379b2f48aba0ed134769cddf922120ee86831b7d8d23dda484dba0a0366e34",
+      "description_zh": "采集外部每周证据，写入 03_input 并生成确定性数据文件",
+      "description_zh_low": "采集每周证据并写入输入目录",
+      "description_zh_medium": "采集每周证据并写入输入目录",
+      "description_zh_high": "采集外部每周证据，写入 03_input 并生成确定性数据文件"
+    },
+    "learn-x-monthly-automation": {
+      "source_sha256": "eb192f48791b8e842b1df58c6cdb134265a17f4c9a6a5a98003a907091c700b2",
+      "description_zh": "从周输入准备月度材料，生成月记、Process Pack 与记忆候选",
+      "description_zh_low": "准备月度材料并生成记忆候选",
+      "description_zh_medium": "准备月度材料并生成记忆候选",
+      "description_zh_high": "从周输入准备月度材料，生成月记、Process Pack 与记忆候选"
+    },
+    "learn-x-monthly-journal": {
+      "source_sha256": "b4950034ac6c3b582c819112a7b1fac389ea5364ae958971b20c090cda7378ab",
+      "description_zh": "依据本地周输入与已确认周记生成安全的飞书月记草稿",
+      "description_zh_low": "生成安全月记草稿"
+    },
+    "learn-x-process": {
+      "source_sha256": "4f48e865cc53830574742bbb698a0b713c2a53d0a961913885a642944f1bb202",
+      "description_zh": "处理周月度输入，生成可审阅的输出壳与记忆候选",
+      "description_zh_low": "处理周月输入并生成记忆候选"
+    },
+    "learn-x-voice-insight": {
+      "source_sha256": "4ccdeee14036c9a12ec17ca253c5022500446b364b9b43f728594b15ca0a61f2",
+      "description_zh": "批量处理粗加工语音，校验洞察并幂等归档到 Voice-X",
+      "description_zh_low": "处理语音并归档洞察"
+    },
+    "learn-x-weekly-automation": {
+      "source_sha256": "75bcc09d9c4b0d85eba5bf6fe3593eac293a6f9358d2626c3637d2fb9f9ac54c",
+      "description_zh": "采集每周输入，准备 Weekly Output，迁移审核记忆并支持历史补全",
+      "description_zh_low": "采集周输入并迁移审核记忆",
+      "description_zh_medium": "采集周输入并迁移审核记忆，支持历史补全",
+      "description_zh_high": "采集每周输入，准备 Weekly Output，迁移审核记忆并支持历史补全"
+    },
+    "learn-x-weekly-journal": {
+      "source_sha256": "37bf6ce74a4ea429407868ffd74830e49a025f5dc23af349c66c20e1473fb784",
+      "description_zh": "依据已落盘周输入生成安全的飞书周记草稿，保留人工回顾区",
+      "description_zh_low": "生成安全周记草稿并保留回顾区"
+    },
+    "link-card": {
+      "source_sha256": "87e75243e4c2742ca25a9392f099546aaa6fb21ab2a1125f09acce9664c4d230",
+      "description_zh": "自动抓取链接内容、判断质量并回复结构化卡片",
+      "description_zh_low": "抓取链接并回复结构化卡片"
+    },
+    "long-article-research": {
+      "source_sha256": "587f2045f843972fcb6b39effad1ec430b3708681b2d18b8987e4479f06bd5ef",
+      "description_zh": "调用多层 Skill 研究长文，生成深度文档并入库",
+      "description_zh_low": "研究长文并生成深度文档"
+    },
+    "long-read": {
+      "source_sha256": "c1ea2b3b0654de2fdf82856493810c6518dd6526aa2fe4bea0663523a1e7f7b2",
+      "description_zh": "编排长文证据与深度解码，生成高密度飞书文档并私聊交付",
+      "description_zh_low": "解码长文并生成研究文档"
+    },
+    "mindfulness-daily": {
+      "source_sha256": "e1405d351ed7de23c0fdeff0501cb85dab250db8bcbbcc31b1daeac77f8936ec",
+      "description_zh": "根据日记生成含健康前置的个性化修心引导并私聊发送",
+      "description_zh_low": "生成健康前置的修心引导"
+    },
+    "mobile-asset-update": {
+      "source_sha256": "2a1363c2a8ae41657b66a43dd4a9d8e61b60a95153a8679d3c16ca2edf2b6870",
+      "description_zh": "每日导入资产截图，完成审计并同步有知有行",
+      "description_zh_low": "导入资产截图并完成审计",
+      "description_zh_high": "每日导入资产截图，完成审计并同步有知有行结果"
+    },
+    "munger-investment-review": {
+      "source_sha256": "71816b4421a9cc2280efde546bb141b0b0b3a05bd9bfc696b96428303e127838",
+      "description_zh": "检查投资判断的失败路径与误判心理，不给交易建议",
+      "description_zh_low": "检查投资判断的失败路径"
+    },
+    "neat-all": {
+      "source_sha256": "b7f3f1d62aeea8e1988d01059b7abc5858891b9330229fefdac8a11e680257ce",
+      "description_zh": "批量检查注册仓库改动，分阶段完成审查、提交与推送",
+      "description_zh_low": "批量检查仓库改动并完成审查"
+    },
+    "neat-freak": {
+      "source_sha256": "7cff7f5ada5ec21d2088a10e0dceec31653b012e12f67ec009145c7e30fe1483",
+      "description_zh": "收尾时审查并同步项目文档与 Agent 记忆",
+      "description_zh_low": "审查并同步项目文档记忆"
+    },
+    "new-repo": {
+      "source_sha256": "18c87000cc66bca9bcecc68f333e944143d34454c64de9d229725c6d56bfe795",
+      "description_zh": "按指令创建项目、仓库及文档并回填 Group Index",
+      "description_zh_low": "创建项目仓库及文档并回填索引"
+    },
+    "people-intelligence": {
+      "source_sha256": "2d185c14d0b907c072b6338bb67785774f5ba241fcb09e92bc26d651db2179ea",
+      "description_zh": "按时间范围检索人物情报与来源，输出可核验分级结果",
+      "description_zh_low": "检索人物情报并输出分级结果"
+    },
+    "play-x": {
+      "source_sha256": "e0ae1dde91fa0446da5638806cc2d83e366688611ed82b5041680a749da6e38b",
+      "description_zh": "仅响应明确进入或继续 play-x 的受约束学习请求",
+      "description_zh_low": "响应受约束的学习请求"
+    },
+    "podcast-research": {
+      "source_sha256": "5e4437aa5cbee62a3bdc265503bfaa994dcf80c50e59612450b1fabe38c3b106",
+      "description_zh": "把小宇宙单集转为可追溯逐字稿和深度研究文档",
+      "description_zh_low": "转录单集并生成研究文档"
+    },
+    "problem-audit": {
+      "source_sha256": "ecdbbcef7c48d55f6a7a673b47b66688179f0b92c48f5eb18e0f46d2e77d47af",
+      "description_zh": "记录并复核真实使用问题，维护处理、复发与治理闭环",
+      "description_zh_low": "复核使用问题并维护治理闭环"
+    },
+    "quick-cd": {
+      "source_sha256": "671bc57a63d8350fbe0bb7750d63b58d02474c2e4f1a709bff9b320d97713be9",
+      "description_zh": "按短名切换已注册仓库",
+      "description_zh_high": "按模糊短名切换已注册仓库并确认路径"
+    },
+    "reading-club-thinking": {
+      "source_sha256": "1dacd1db3d396ee8cb09bf293a89d920b073664016b5e1998f420d03e7853b84",
+      "description_zh": "把图片解析为读书会思考记录，确认后写入 Base",
+      "description_zh_low": "解析图片为读书会思考记录"
+    },
+    "research-x": {
+      "source_sha256": "67274fa3177784526571981ef678af27b94310caf1ae906b1960fc012686ebd2",
+      "description_zh": "管理研究候选并完成轻研究、深研究，输出飞书文档",
+      "description_zh_low": "管理研究候选并输出研究文档"
+    },
+    "skill-thinking": {
+      "source_sha256": "be626d7dcffe087e10571ce29b7bbb3ce5e3e0069be0e8508253074e39dd6ad2",
+      "description_zh": "统计 Skill 使用、耗时与失败，生成维护风险报告",
+      "description_zh_low": "统计 Skill 使用并生成风险报告"
+    },
+    "thinking-group": {
+      "source_sha256": "f85c460c05342367fd701123f8e08b7c048bfa5bf619c7674bd76fbd19ac0848",
+      "description_zh": "汇总个人 AI 系统证据，形成分级治理报告",
+      "description_zh_low": "汇总 AI 系统证据并治理"
+    },
+    "time-x-flag": {
+      "source_sha256": "297078afccc5bd5a25e16e3a10fafa121db8f43845f5cfa88b3edb5831a20092",
+      "description_zh": "在手机端或群机器人批量整理标记并按主题时效处理",
+      "description_zh_low": "手机端或群机器人整理标记"
+    },
+    "time-x-flag-desktop": {
+      "source_sha256": "c4d6b90ee1032e37fa007ff1d9c1c66f8e0118a8f25a250313ea220f77eada60",
+      "description_zh": "在 Codex Desktop 用批次工作台筛选、修改或取消飞书标记",
+      "description_zh_low": "批量处理飞书标记",
+      "description_zh_medium": "在桌面工作台处理飞书标记"
+    },
+    "time-x-note": {
+      "source_sha256": "4b101570cc5b03e308d35e38014f1f6b5d3d9687e479531bb9a585451897a472",
+      "description_zh": "管理 Time-X 随时记与日历请求，并双向同步日记素材",
+      "description_zh_low": "管理随时记与日历素材"
+    },
+    "voice-x": {
+      "source_sha256": "3e7e2a45f183d9d9f45070521ce352468b381587642b8e89f18e81135c57c88c",
+      "description_zh": "分阶段处理语音转写，生成原文、总结与洞察并支持幂等归档",
+      "description_zh_low": "处理语音并归档总结洞察"
+    },
+    "wechat-weekly-input": {
+      "source_sha256": "1e8ead66c1921e6dcb73531e45ee1f21004ee377523505e89a3fb11a51596d23",
+      "description_zh": "根据聊天截图提取重点对话，生成周度 WeChat.md",
+      "description_zh_low": "提取聊天重点并生成周度文件"
+    },
+    "wisdom-gate": {
+      "source_sha256": "2aad85dbe5b0618e4c80de54d856d4ed9f4f2c3372652ccb9a9c18aa01f3db10",
+      "description_zh": "提取认知内容结构化入库智慧之门，支持 Flomo 回顾导入",
+      "description_zh_low": "结构化认知内容并导入回顾"
+    },
+    "wisdom-review": {
+      "source_sha256": "4bd90ff463d82e314a5fc45d1eeca9ce5d8dc0d4c63cb85b975c3da5fef714aa",
+      "description_zh": "按记忆曲线推送智慧资产与思考回顾卡片，生成周日减法清单",
+      "description_zh_low": "推送智慧回顾并生成减法清单"
+    },
+    "write-x-compose": {
+      "source_sha256": "40cdd66038adbb5db10d259524641965879d4d6e1b7d81dfc93ff9732c56b4e7",
+      "description_zh": "把主题灵感整理成作品并建立来源关系",
+      "description_zh_high": "把主题灵感整理成作品并建立来源关系链"
+    },
+    "write-x-input": {
+      "source_sha256": "5b47a9e55a0e9a49bab5c989cf70059e9bf8fe2d53c304411897ae84fff9699e",
+      "description_zh": "匹配并确认写作灵感，保存主题与作品状态",
+      "description_zh_high": "匹配确认写作灵感并保存主题与作品状态"
+    },
+    "youzhiyouxing-temperature-reminder": {
+      "source_sha256": "19bf924c612b8572413cdb20ce584b4d35d127780de62a4f1b70948c1a88d580",
+      "description_zh": "执行有知有行每日与月度温度提醒",
+      "description_zh_low": "执行投资温度提醒",
+      "description_zh_high": "执行有知有行每日与月度温度提醒任务"
+    },
+    "ywask": {
+      "source_sha256": "4ffcff2439efdd84b5cb1d90cd0bf3251bf545a4998b9c575635117e058c635d",
+      "description_zh": "深挖问题根因并生成双轨分析",
+      "description_zh_high": "深挖问题根因并生成双轨分析报告"
+    },
+    "ywdev": {
+      "source_sha256": "c8a2800cbf9ada20640b1239111bb87acc92bfd1d2fad1432da5c62e4c9eb72e",
+      "description_zh": "用 PM2 管理本机服务的守护、恢复与日志诊断",
+      "description_zh_low": "管理本机服务并诊断日志"
+    },
+    "ywnew": {
+      "source_sha256": "1f46dba4bd4aab556e147bf4cc27dffdb534354925a86f0a78570d60c967dd25",
+      "description_zh": "按规则批量重置群聊机器人会话并检查冷却",
+      "description_zh_low": "重置群聊会话并检查冷却",
+      "description_zh_high": "按规则重置群聊机器人会话并检查冷却"
+    },
+    "ywnext": {
+      "source_sha256": "9ce08e39d1fe1f7c3cb28c684f8fe97a3ba3ceb7f89f806372935969485a9be9",
+      "description_zh": "结合候选清单与日常记录，生成做、学、玩和思考建议",
+      "description_zh_low": "生成做学玩思考建议"
+    },
+    "feiyu-poetry-collect": {
+      "source_sha256": "79d2cafea51fb03911a681813596b58b677afd80be316a444a180fdc3a0e6942",
+      "description_zh": "每周提取 ChatGPT 诗作，去重后幂等归档到多维表格",
+      "description_zh_low": "提取诗作并去重归档到多维表格"
+    }
+  }
+}

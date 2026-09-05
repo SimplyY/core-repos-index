@@ -23,7 +23,7 @@
 - 不再维护静态网站；多维表格截图或链接就是分享入口。
 - 新项目表单必须登录；Workflow 只允许指定创建者，并只把 `record_id` 送入 Agent，不传用户填写文本。
 - `初始化状态`是 new-repo 的持久队列：`待处理`可认领、`处理中`防并发、`成功`和`需处理`不可自动重跑。
-- Skill 描述规范：普通群展示只取描述中的中文主体，截到最后一个中文字符、限 25 字；月度频率置顶按 30 天窗口调用动态分档：先汇总所有可访问注册群的去重 Skill，调用少于 3 次为低频，剩余 Skill 按调用次数、活跃天数和名称排序，前 30% 为高频，其余为中频；低/中/高描述分别限 10/20/30 字，先保留完整首句，超限时压缩括号注释和低信息修饰，抽取完整的“动作 + 对象”语义单元，不按字符硬截断；没有可用完整文本时只显示 Skill 名。群 Skill 汇总不完整时必须停止发送。无中文只显示 Skill 名不显示描述。新建或维护 skill 时应提供 ≤25 字中文 `description_zh`，避免纯英文描述导致群里退化成无描述。
+- Skill 描述规范：普通群展示只取描述中的中文主体，截到最后一个中文字符、限 25 字；月度频率置顶按 30 天窗口调用动态分档：先汇总所有可访问注册群的去重 Skill，调用少于 3 次为低频，剩余 Skill 按调用次数、活跃天数和名称排序，前 30% 为高频，其余为中频；低/中/高描述预算分别为 20/30/40 字，并优先满足低频超过 5 字、中频超过 10 字、高频超过 20 字，先保留完整首句，超限时压缩括号注释和低信息修饰，抽取完整的“动作 + 对象”语义单元，不按字符硬截断；原文不足时保留最长可用完整语义，不编造内容；没有可用完整文本时只显示 Skill 名。群 Skill 汇总不完整时必须停止发送。无中文只显示 Skill 名不显示描述。新建或维护 skill 时应提供 ≤25 字中文 `description_zh`，避免纯英文描述导致群里退化成无描述。
 
 ## 关键文件
 
@@ -53,20 +53,17 @@ node scripts/group-info.mjs update --group group-index --dry-run
 # --apply 自动要求实时读取，先预检标签页，Base 失败时不会进入写入流程
 node scripts/group-info.mjs update --group group-index --apply
 
-# 更新全部 GROUP_INFO.md
-node scripts/group-info.mjs update-all --apply
+# 更新全部 GROUP_INFO.md，并按 30 天频率生成群置顶
+node scripts/group-info.mjs update-all --apply --skill-usage-file <usage.json>
 
-# 发卡片 + 置顶
-node scripts/group-info.mjs top --group group-index --apply
+# 发卡片 + 置顶（apply 必须提供 30 天 Skill 使用统计）
+node scripts/group-info.mjs top --group group-index --apply --skill-usage-file <usage.json>
 
-# 全量群发卡片 + 置顶
-node scripts/group-info.mjs top-all --apply
+# 全量群发卡片 + 置顶（排除 learn-space；apply 必须提供 30 天 Skill 使用统计）
+node scripts/group-info.mjs top-all --apply --skill-usage-file <usage.json> --exclude-group learn-space
 
 # 使用 skill-thinking 30 天窗口聚合报告进行频率排序
 node scripts/group-info.mjs top-all --apply --refresh --require-fresh --skill-usage-file <usage.json>
-
-# 临时排除不可访问群（排除项不进入分母，也不发送）
-node scripts/group-info.mjs top-all --apply --refresh --require-fresh --skill-usage-file <usage.json> --exclude-group learn-space
 
 # 自检
 node scripts/group-info.mjs self-test
@@ -85,7 +82,7 @@ lark-cli update --check --json
 - 是否更新置顶，继续由原有摘要对比逻辑决定。
 - 不新增“群置顶展示”之类字段。
 - 月度频率排序只消费 `skill-thinking --windows 30 --format json` 的 Desktop/Deep 聚合结果，不展示调用次数；调用次数降序、活跃天数降序、Skill 名稳定排序。频率标签在所有可访问注册群的去重 Skill 集合上计算后复用到各群，避免把全局安装 Skill 或单个群单独取 Top 30% 导致高频过多。
-- usage 文件缺失、格式/窗口/来源不完整或 Skill 无法匹配时必须非零退出，并且不发送新的群置顶；未传 usage 文件的手动命令保持原扫描顺序兼容。
+- usage 文件缺失、格式/窗口/来源不完整或 Skill 无法匹配时必须非零退出，并且不发送新的群置顶；dry-run 未传 usage 文件时仅允许预览扫描顺序，任何 apply 置顶路径都必须提供 usage。
 
 ## Codex 默认执行流程
 

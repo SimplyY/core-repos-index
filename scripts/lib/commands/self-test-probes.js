@@ -85,10 +85,11 @@ printf '%s\\n' '{"ok":true,"data":{}}'
     id: "probe", name: "probe", group_name: "probe", repo_path: ".", repo: ".",
     chat_id: "oc_probe", positioning: "probe", links: [],
   });
+  const probeUsage = "{ byName: new Map(), frequencyByName: new Map() }";
   const run = (mode, stateSource) => {
     const code = mode === "fail"
-      ? `import { topGroup } from ${JSON.stringify(modulePath)}; try { topGroup({}, {}, ${groupJson}, "apply"); } catch {}`
-      : `import { readFileSync } from "node:fs"; import { topGroup } from ${JSON.stringify(modulePath)}; const state = JSON.parse(readFileSync(process.env.GROUP_INFO_STATE, "utf8")); topGroup({}, state, ${groupJson}, "apply");`;
+      ? `import { topGroup } from ${JSON.stringify(modulePath)}; try { topGroup({}, {}, ${groupJson}, "apply", ${probeUsage}); } catch {}`
+      : `import { readFileSync } from "node:fs"; import { topGroup } from ${JSON.stringify(modulePath)}; const state = JSON.parse(readFileSync(process.env.GROUP_INFO_STATE, "utf8")); topGroup({}, state, ${groupJson}, "apply", ${probeUsage});`;
     return spawnSync(process.execPath, ["--input-type=module", "-e", code], {
       cwd: process.cwd(), encoding: "utf8", maxBuffer: 4 * 1024 * 1024,
       env: { ...process.env, GROUP_INFO_STATE: stateSource, FAKE_TOP_MODE: mode, FAKE_LOG: logPath, PATH: temp + ":" + (process.env.PATH || "") },
@@ -102,7 +103,7 @@ printf '%s\\n' '{"ok":true,"data":{}}'
     const mismatchState = JSON.parse(readFileSync(statePath, "utf8"));
     mismatchState.groups.probe.top_notice_pending_summary = "changed-summary";
     writeFileSync(statePath, JSON.stringify(mismatchState));
-    const mismatchCode = `import { readFileSync } from "node:fs"; import { topGroup } from ${JSON.stringify(modulePath)}; try { topGroup({}, JSON.parse(readFileSync(process.env.GROUP_INFO_STATE, "utf8")), ${groupJson}, "apply"); process.exit(1); } catch (error) { if (!String(error.message).includes("摘要或群已变化")) process.exit(2); }`;
+    const mismatchCode = `import { readFileSync } from "node:fs"; import { topGroup } from ${JSON.stringify(modulePath)}; try { topGroup({}, JSON.parse(readFileSync(process.env.GROUP_INFO_STATE, "utf8")), ${groupJson}, "apply", ${probeUsage}); process.exit(1); } catch (error) { if (!String(error.message).includes("摘要或群已变化")) process.exit(2); }`;
     const mismatch = spawnSync(process.execPath, ["--input-type=module", "-e", mismatchCode], { cwd: process.cwd(), encoding: "utf8", maxBuffer: 4 * 1024 * 1024, env: { ...process.env, GROUP_INFO_STATE: statePath, FAKE_TOP_MODE: "success", FAKE_LOG: logPath, PATH: temp + ":" + (process.env.PATH || "") } });
     assertEqual(mismatch.status, 0, "top recovery stops when pending summary changes");
     assertEqual(readFileSync(logPath, "utf8").trim().split("\n").filter((call) => call.startsWith("im +messages-send")).length, 1, "summary mismatch does not resend card");
@@ -120,7 +121,7 @@ printf '%s\\n' '{"ok":true,"data":{}}'
     const readbackFailureState = JSON.parse(readFileSync(statePath, "utf8"));
     readbackFailureState.groups.probe.last_top_summary = "old-summary";
     writeFileSync(statePath, JSON.stringify(readbackFailureState));
-    const readbackFailureCode = `import { readFileSync } from "node:fs"; import { topGroup } from ${JSON.stringify(modulePath)}; try { topGroup({}, JSON.parse(readFileSync(process.env.GROUP_INFO_STATE, "utf8")), ${groupJson}, "apply"); process.exit(1); } catch (error) { if (!String(error.message).includes("消息读回未确认")) process.exit(2); }`;
+    const readbackFailureCode = `import { readFileSync } from "node:fs"; import { topGroup } from ${JSON.stringify(modulePath)}; try { topGroup({}, JSON.parse(readFileSync(process.env.GROUP_INFO_STATE, "utf8")), ${groupJson}, "apply", ${probeUsage}); process.exit(1); } catch (error) { if (!String(error.message).includes("消息读回未确认")) process.exit(2); }`;
     const readbackFailure = spawnSync(process.execPath, ["--input-type=module", "-e", readbackFailureCode], { cwd: process.cwd(), encoding: "utf8", maxBuffer: 4 * 1024 * 1024, env: { ...process.env, GROUP_INFO_STATE: statePath, FAKE_TOP_MODE: "success", FAKE_MESSAGE_READBACK_MODE: "missing", FAKE_LOG: logPath, PATH: temp + ":" + (process.env.PATH || "") } });
     assertEqual(readbackFailure.status, 0, "message readback failure stops final state");
     const afterReadbackFailure = JSON.parse(readFileSync(statePath, "utf8")).groups.probe;

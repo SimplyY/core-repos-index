@@ -8,6 +8,7 @@ import { stateFor, saveState } from "../state.js";
 import {
   groupIcon, realpathMaybe, cleanSkillDesc, cleanSkillDescCompleteSentence
 } from "../utils.js";
+import { modelSkillDescription } from "../skill-descriptions.js";
 import { renderPinSummary } from "./update.js";
 
 const USAGE_WINDOW_DAYS = 30;
@@ -79,6 +80,9 @@ export function normalizeSkillUsage(report) {
     if (!profile || profile.available !== true) throw new Error(`Skill 使用统计缺少完整 ${name} 来源`);
   }
   if (!Array.isArray(report.skills)) throw new Error("Skill 使用统计缺少 skills");
+  if (report.warnings !== undefined && (!Array.isArray(report.warnings) || report.warnings.length > 0)) {
+    throw new Error("Skill 使用统计存在未解决 warning，拒绝按不完整数据排序");
+  }
 
   const byName = new Map();
   for (const row of report.skills) {
@@ -115,10 +119,10 @@ export function scopeSkillUsage(usage, skillNames) {
   const frequencyByName = new Map(scoped.map((row) => [
     row.name,
     row.calls < LOW_FREQUENCY_CALLS
-      ? { label: "低", descriptionMax: 10 }
+      ? { label: "低", descriptionMax: 20 }
       : highNames.has(row.name)
-        ? { label: "高", descriptionMax: 30 }
-        : { label: "中", descriptionMax: 20 },
+        ? { label: "高", descriptionMax: 40 }
+        : { label: "中", descriptionMax: 30 },
   ]));
   return { ...usage, frequencyByName, scopedNames: new Set(names) };
 }
@@ -134,13 +138,26 @@ export function rankSkills(skills, usage) {
   }).sort((a, b) => b.usageCalls - a.usageCalls || b.usageActiveDays - a.usageActiveDays || (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
 }
 
+export function attachModelSkillDescriptions(skills, usage) {
+  return rankSkills(skills, usage).map((skill) => ({
+    ...skill,
+    modelDescription: modelSkillDescription(skill, skill.frequencyDescriptionMax),
+  }));
+}
+
+export function assertSkillUsageForApply(mode, skillUsage) {
+  if (mode === "apply" && !skillUsage) {
+    throw new Error("群置顶 apply 必须提供 30 天 Skill 使用统计（--skill-usage-file），否则无法保证频率排序和完整描述");
+  }
+}
+
 function orderedSkillsFor(scan, skillUsage) {
   if (scan.error) throw new Error(`Skill 扫描失败：${scan.error}`);
   if (!skillUsage) return scan.skills;
   return rankSkills(scan.skills, skillUsage);
 }
 
-function renderTopNoticeCard(group, scan, now, v2Fields, orderedSkills = scan.skills) {
+export function renderTopNoticeCard(group, scan, now, v2Fields, orderedSkills = scan.skills) {
   const icon = groupIcon(group, v2Fields);
   const nameZh = (v2Fields && v2Fields.name_zh) || group.name;
   const positioning = group.positioning || '';
@@ -149,9 +166,7 @@ function renderTopNoticeCard(group, scan, now, v2Fields, orderedSkills = scan.sk
   const skillLines = orderedSkills.map((s, i) => {
     const n = s.name_zh || s.name;
     const label = s.frequencyLabel ? `${n} (${s.frequencyLabel})` : n;
-    const d = s.frequencyLabel
-      ? cleanSkillDescCompleteSentence(s, s.frequencyDescriptionMax || 25)
-      : cleanSkillDesc(s, s.frequencyDescriptionMax || 25);
+    const d = s.modelDescription || cleanSkillDescCompleteSentence(s, s.frequencyDescriptionMax || 25);
     return (i + 1) + '. ' + (d ? label + '：' + d : label);
   });
 
@@ -218,9 +233,11 @@ export function topNoticeIdempotencyKey(group, summary) {
 }
 
 export function topGroup(registry, state, group, mode, skillUsage = null) {
+  assertSkillUsageForApply(mode, skillUsage);
   const now = new Date().toISOString();
   const scan = scanRepo(group);
   const orderedSkills = orderedSkillsFor(scan, skillUsage);
+  const describedSkills = skillUsage ? attachModelSkillDescriptions(scan.skills, skillUsage) : orderedSkills;
   const repoPath = realpathMaybe(group.repo_path || group.repo);
   const target = group.group_info_path || (repoPath ? join(repoPath, "GROUP_INFO.md") : null);
   let v2Fields = null;
@@ -229,7 +246,7 @@ export function topGroup(registry, state, group, mode, skillUsage = null) {
       v2Fields = parseGroupInfoV2(readFileSync(target, "utf8"));
     } catch (e) { /* ignore */ }
   }
-  const summary = renderPinSummary(group, scan, now, v2Fields, orderedSkills);
+  const summary = renderPinSummary(group, scan, now, v2Fields, describedSkills);
   const chatId = group.chat_id;
 
   if (!chatId) {
@@ -281,7 +298,7 @@ export function topGroup(registry, state, group, mode, skillUsage = null) {
   if (mode !== "apply") {
     console.log("\n=== " + group.name + " :: top-notice-dry-run ===\n");
     console.log("chat_id: " + chatId);
-    const card = renderTopNoticeCard(group, scan, now, v2Fields, orderedSkills);
+    const card = renderTopNoticeCard(group, scan, now, v2Fields, describedSkills);
     console.log("\n----- 将发送到飞书群的卡片 JSON -----");
     console.log(JSON.stringify(card, null, 2));
     console.log("\n----- 群置顶摘要（用于变更对比）-----");
@@ -292,7 +309,7 @@ export function topGroup(registry, state, group, mode, skillUsage = null) {
 
   console.log("\n=== " + group.name + " :: top-notice-apply ===\n");
 
-  const card = renderTopNoticeCard(group, scan, now, v2Fields, orderedSkills);
+  const card = renderTopNoticeCard(group, scan, now, v2Fields, describedSkills);
   const cardJson = JSON.stringify(card);
   const idempotencyKey = topNoticeIdempotencyKey(group, summary);
 

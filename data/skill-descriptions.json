@@ -9,11 +9,11 @@
       "description_zh_high": "独立解码长文的问题、结构、前提与盲点"
     },
     "asset-report": {
-      "source_sha256": "127c1cc0d3f19628ea1c87d278428b8e582af4b5da8a1b7896214e96bca67760",
-      "description_zh": "比较确认资产快照与历史报告，生成资产配置与操作洞察并写入知识库",
-      "description_zh_low": "比较资产快照并生成配置洞察",
-      "description_zh_medium": "比较资产快照并生成配置洞察",
-      "description_zh_high": "比较确认资产快照与历史报告，生成资产配置与操作洞察并写入知识库"
+      "source_sha256": "f28ed38650b2ec425feaf76a20f87429dc7ed6f9e7a6db87204de086a153f66e",
+      "description_zh": "比较资产快照与历史报告，生成正式飞书资产报告写入知识库",
+      "description_zh_low": "生成正式飞书资产报告并写入知识库",
+      "description_zh_medium": "比较资产快照与历史报告，生成飞书资产报告并写入知识库",
+      "description_zh_high": "比较快照与历史报告，生成正式飞书资产报告写入知识库，附石磊补充，同日重跑覆盖"
     },
     "base-time-group": {
       "source_sha256": "385370455cb36f3bcd7a0c2c47201b7eb7343f3842101917846bc6f0bde7e1a4",

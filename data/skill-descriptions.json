@@ -323,6 +323,12 @@
       "source_sha256": "79d2cafea51fb03911a681813596b58b677afd80be316a444a180fdc3a0e6942",
       "description_zh": "每周提取 ChatGPT 诗作，去重后幂等归档到多维表格",
       "description_zh_low": "提取诗作并去重归档到多维表格"
+    },
+    "skillhub-personal-recommendation": {
+      "source_sha256": "bbccd2a67896018f1a4a38e838cde90386fc62137b2966bba9ae936d546bb766",
+      "description_zh": "根据近期需求从 SkillHub 筛选个性化推荐",
+      "description_zh_low": "按近期需求筛选 Skill 推荐",
+      "description_zh_high": "依据近期需求从 SkillHub 严谨筛选 5–10 个个性化 Skill 推荐"
     }
   }
 }

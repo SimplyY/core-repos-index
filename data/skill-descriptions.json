@@ -121,6 +121,13 @@
       "description_zh_medium": "采集每周证据并写入输入目录",
       "description_zh_high": "采集外部每周证据，写入 03_input 并生成确定性数据文件"
     },
+    "learn-x-prompt-usage": {
+      "source_sha256": "a5a6d550f9fc9f19a940eb91a41e167550913b9807661e568c0258dcffb3d65c",
+      "description_zh": "合并 Learn-X 两端 Chat Pack 提示词使用记录",
+      "description_zh_low": "合并 Chat Pack 提示词使用记录",
+      "description_zh_medium": "合并 Learn-X 两端提示词使用记录",
+      "description_zh_high": "合并 Learn-X 两端 Chat Pack 提示词使用记录并校验"
+    },
     "learn-x-monthly-automation": {
       "source_sha256": "eb192f48791b8e842b1df58c6cdb134265a17f4c9a6a5a98003a907091c700b2",
       "description_zh": "从周输入准备月度材料，生成月记、Process Pack 与记忆候选",
@@ -273,9 +280,11 @@
       "description_zh_low": "提取聊天重点并生成周度文件"
     },
     "wisdom-gate": {
-      "source_sha256": "2aad85dbe5b0618e4c80de54d856d4ed9f4f2c3372652ccb9a9c18aa01f3db10",
+      "source_sha256": "305451c7c2fa7d9511f7a8f9f5165c31c0022ba396504679e99e0feb65aa882c",
       "description_zh": "提取认知内容结构化入库智慧之门，支持 Flomo 回顾导入",
-      "description_zh_low": "结构化认知内容并导入回顾"
+      "description_zh_low": "结构化认知内容并导入回顾",
+      "description_zh_medium": "提取认知内容结构化入库智慧之门，支持 Flomo 回顾导入",
+      "description_zh_high": "提取认知内容结构化入库智慧之门，支持 Flomo 回顾导入与定期增量"
     },
     "wisdom-review": {
       "source_sha256": "4bd90ff463d82e314a5fc45d1eeca9ce5d8dc0d4c63cb85b975c3da5fef714aa",

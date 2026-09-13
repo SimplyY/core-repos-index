@@ -129,11 +129,12 @@ const wantedGroup = normalizeGroupName(args.group);
 const excludedGroups = new Set((args.excludeGroups || []).map(normalizeGroupName));
 const isExcluded = (group) => [group.id, group.name, group.group_name]
   .some((value) => excludedGroups.has(normalizeGroupName(value)));
+const hasRepoBinding = (group) => Boolean(group.repo_path || group.repo);
 const THREE_DAYS_MS = 72 * 60 * 60 * 1000;
 
 let groups;
 if (args.command === "update-all" || args.command === "top-all" || args.command === "sort-tabs-all") {
-  groups = registry.groups.filter((group) => group.auto_update !== false && !isExcluded(group));
+  groups = registry.groups.filter((group) => group.auto_update !== false && !isExcluded(group) && hasRepoBinding(group));
 } else {
   groups = registry.groups.filter((group) =>
     !isExcluded(group) && (group.id === wantedGroup || group.name === wantedGroup || group.group_name === wantedGroup)
@@ -159,7 +160,7 @@ if (args.skillUsageFile) {
   try {
     const usage = normalizeSkillUsage(readJson(args.skillUsageFile));
     const scopeNames = new Set();
-    for (const group of registry.groups.filter((item) => item.auto_update !== false && !isExcluded(item))) {
+    for (const group of registry.groups.filter((item) => item.auto_update !== false && !isExcluded(item) && hasRepoBinding(item))) {
       const scan = scanRepo(group);
       if (scan.error) throw new Error(`群 ${group.name} 无法扫描，不能计算完整群置顶 Skill 分母：${scan.error}`);
       for (const skill of scan.skills) scopeNames.add(skill.name);

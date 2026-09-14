@@ -53,7 +53,16 @@ function assertMixedIdentityPolicy(mode) {
   const strict = readConfig("strict-mode");
   const defaultAs = readConfig("default-as");
   if (strict.status !== 0 || defaultAs.status !== 0) {
-    throw new Error("无法读取当前 lark-cli 身份策略；未执行任何群信息写入。请先将当前 bridge Profile 配为 user-default。");
+    const detail = [
+      ["strict-mode", strict],
+      ["default-as", defaultAs],
+    ]
+      .filter(([, result]) => result.status !== 0)
+      .map(([command, result]) => `${command}: ${result.stderr?.trim() || result.stdout?.trim() || result.error?.message || `exit ${result.status}`}`)
+      .join("; ");
+    throw new Error(
+      "无法读取当前 lark-cli 身份策略（" + detail + "）；未执行任何群信息写入。请先将当前 bridge Profile 配为 user-default。"
+    );
   }
   const strictMode = strict.stdout.match(/strict-mode:\s*(\w+)/)?.[1];
   const defaultIdentity = defaultAs.stdout.match(/default-as:\s*(\w+)/)?.[1];

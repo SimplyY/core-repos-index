@@ -128,6 +128,13 @@
       "description_zh_medium": "合并 Learn-X 两端提示词使用记录",
       "description_zh_high": "合并 Learn-X 两端 Chat Pack 提示词使用记录并校验"
     },
+    "learn-x-question-review": {
+      "source_sha256": "22a0fc0ce576f7e9cff58c0b17d5e03a7880242448776f1db0733872091a91cb",
+      "description_zh": "复盘 Learn-X 长期认知议题，比较增量证据",
+      "description_zh_low": "复盘 Learn-X 认知议题",
+      "description_zh_medium": "复盘 Learn-X 长期认知议题，比较增量证据",
+      "description_zh_high": "围绕 Learn-X 认知议题做周/月复盘，比较增量证据、触发关键思考"
+    },
     "learn-x-monthly-automation": {
       "source_sha256": "eb192f48791b8e842b1df58c6cdb134265a17f4c9a6a5a98003a907091c700b2",
       "description_zh": "从周输入准备月度材料，生成月记、Process Pack 与记忆候选",
@@ -233,6 +240,13 @@
       "description_zh": "按短名切换已注册仓库",
       "description_zh_high": "按模糊短名切换已注册仓库并确认路径"
     },
+    "requirement-evaluator": {
+      "source_sha256": "770bd8a55daa4d8a99c734148f7c3f255955520baaca789f1538e0e22201d8c3",
+      "description_zh": "组装需求评估上下文，生成深度评估 Prompt",
+      "description_zh_low": "组装需求评估上下文",
+      "description_zh_medium": "组装需求评估上下文并生成深度评估 Prompt",
+      "description_zh_high": "组装最少但会改变判断的需求事实与未知项，生成深度评估 Prompt"
+    },
     "reading-club-thinking": {
       "source_sha256": "1dacd1db3d396ee8cb09bf293a89d920b073664016b5e1998f420d03e7853b84",
       "description_zh": "把图片解析为读书会思考记录，确认后写入 Base",
@@ -287,9 +301,11 @@
       "description_zh_high": "提取认知内容结构化入库智慧之门，支持 Flomo 回顾导入与定期增量"
     },
     "wisdom-review": {
-      "source_sha256": "4bd90ff463d82e314a5fc45d1eeca9ce5d8dc0d4c63cb85b975c3da5fef714aa",
-      "description_zh": "按记忆曲线推送智慧资产与思考回顾卡片，生成周日减法清单",
-      "description_zh_low": "推送智慧回顾并生成减法清单"
+      "source_sha256": "8870b0b6d9d79ae175ebc5a38a9ce29e00048b80b95e95e6b6ae4f9f22841bfd",
+      "description_zh": "按记忆曲线推送回顾卡片，周日生成减法清单",
+      "description_zh_low": "按记忆曲线推送回顾卡片",
+      "description_zh_medium": "按记忆曲线推送回顾卡片并生成减法清单",
+      "description_zh_high": "按艾宾浩斯记忆曲线推送各类回顾卡片，周日提供回顾减法清单"
     },
     "write-x-compose": {
       "source_sha256": "40cdd66038adbb5db10d259524641965879d4d6e1b7d81dfc93ff9732c56b4e7",
@@ -324,9 +340,11 @@
       "description_zh_high": "按规则重置群聊机器人会话并检查冷却"
     },
     "ywnext": {
-      "source_sha256": "9ce08e39d1fe1f7c3cb28c684f8fe97a3ba3ceb7f89f806372935969485a9be9",
+      "source_sha256": "ed23a94ebcb909ab296c2bc21dcec34c4240d3e44e19b0c35af54d35549590da",
       "description_zh": "结合候选清单与日常记录，生成做、学、玩和思考建议",
-      "description_zh_low": "生成做学玩思考建议"
+      "description_zh_low": "生成做学玩思考建议",
+      "description_zh_medium": "结合候选清单与日常记录生成做学玩建议",
+      "description_zh_high": "基于本周候选清单与日常记录，生成做、学习、娱乐、思考建议"
     },
     "feiyu-poetry-collect": {
       "source_sha256": "79d2cafea51fb03911a681813596b58b677afd80be316a444a180fdc3a0e6942",

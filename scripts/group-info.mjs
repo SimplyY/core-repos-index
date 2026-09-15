@@ -146,7 +146,8 @@ if (args.command === "update-all" || args.command === "top-all" || args.command 
   groups = registry.groups.filter((group) => group.auto_update !== false && !isExcluded(group) && hasRepoBinding(group));
 } else {
   groups = registry.groups.filter((group) =>
-    !isExcluded(group) && (group.id === wantedGroup || group.name === wantedGroup || group.group_name === wantedGroup)
+    group.auto_update !== false && !isExcluded(group) &&
+    (group.id === wantedGroup || group.name === wantedGroup || group.group_name === wantedGroup)
   );
 }
 

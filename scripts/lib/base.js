@@ -12,6 +12,7 @@ export function normalizeBaseRow(row, recordId) {
   const repo = String(row["仓库路径"] || "").trim();
   const repoUrl = parseLinks(row["仓库链接"])[0]?.url || "";
   const links = parseLinks(row["链接"]);
+  const notes = String(row["备注"] || "").trim();
   return {
     id: groupIdFromName(project),
     name: project,
@@ -23,13 +24,13 @@ export function normalizeBaseRow(row, recordId) {
     group_info_path: repo ? join(repo, "GROUP_INFO.md") : "",
     positioning: String(row["定位"] || "").trim(),
     bot: "Codex / Code X bot",
-    auto_update: true,
+    // ponytail: lifecycle uses a note prefix; add a dedicated status field only if more states are needed.
+    auto_update: !notes.startsWith("【暂时停用】"),
     priority: parsePriority(row["优先级"]),
     links,
     manual_workflows: parseManualWorkflows(row["工作流"]),
     todos: parseTextItems(row["待办"] || row["TODO"]),
-    notes: String(row["备注"] || "").trim()
-    ,
+    notes,
     record_id: recordId || "",
   };
 }

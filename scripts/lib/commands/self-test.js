@@ -59,6 +59,7 @@ export function selfTest() {
   assertEqual(baseGroup.repo_url, "https://github.com/SimplyY/learn-x", "repo url");
   assertEqual(baseGroup.priority, 2, "base priority");
   assertEqual(baseGroup.manual_workflows[0].description_zh, "每周处理", "base workflows");
+  assertEqual(normalizeBaseRow({ "项目": "paused", "备注": "【暂时停用】以后恢复" }).auto_update, false, "disabled group marker");
   assertEqual(parseLinks("[入口](https://example.com/x)")[0].url, "https://example.com/x", "markdown links");
   const pageRows = normalizeBasePage({ ok: true, data: {
     fields: ["项目"],

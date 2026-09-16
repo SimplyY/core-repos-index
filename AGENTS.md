@@ -28,7 +28,7 @@
 
 ## 关键文件
 
-- `scripts/group-info.mjs`：主执行入口（支持 update / update-all / top / top-all / list / sort-tabs / self-test 等子命令）。
+- `scripts/group-info.mjs`：主执行入口（支持 update / update-all / top / top-all / list / sort-tabs / sync-tab / self-test 等子命令）。
 - `scripts/reverse-link-sync.mjs`：辅助入口，从 Base/标签页反向同步链接回 README。
 - `scripts/lib/`：核心模块目录（`state.js`、`base.js`、`utils.js`、`fields.js`、`frontmatter.js`、`scan.js`、`link-sync.js`）及 `commands/`（`update.js`、`top.js`、`list.js`、`self-test.js`）。
 - `state.json`：机器运行状态，只记录更新时间、置顶消息和上次摘要。
@@ -68,6 +68,11 @@ node scripts/group-info.mjs top-all --apply --refresh --require-fresh --skill-us
 
 # 自检
 node scripts/group-info.mjs self-test
+
+# 仅维护 learn-x 群的“人生核心议题”快捷标签（不写 README/GROUP_INFO/Base）
+node scripts/group-info.mjs sync-tab --group learn-x --name "人生核心议题" \
+  --url "https://ywhome.feishu.cn/wiki/<quarter-node>" --type doc --dry-run --require-fresh
+# 确认 dry-run 后再加 --apply；消息标签由飞书固定第一，该标签排在第一个自定义位置。
 
 # 飞书 CLI 前置诊断（只读）
 lark-cli doctor
@@ -135,6 +140,12 @@ Feishu 链接操作前先判目标类型：先用 `lark-base +url-resolve` 解�
 - **完成证据**：`--apply` 先预检标签页；Base 写入须通过目标记录「链接」字段精确读回，标签页写入须通过 URL、名称和类型读回，群置顶须读回消息 ID/群 ID/删除状态；任一环节未确认即停止后续写入。消息读回不代表顶栏 UI 已有可查询接口。
 - **AGENTS.md**：如果某链接需要长期维护但不在 README 中，Agent 应提示用户将其写入 README（或 README 的「核心资产」段落）。
 - **不自动删除**：Base 和群标签页中手动添加的链接不会被自动删除，只做增量添加和名称更新。
+
+### Learn-X 人生核心议题标签
+
+- `sync-tab` 是受控例外，仅操作注册表中的 `learn-x` 群标签页；不触碰其他群、README、GROUP_INFO、Base、群公告或群置顶。
+- 标签名称固定为“人生核心议题”，URL 指向当前季度总览 Wiki 节点；按名称和 `tab_id` 幂等更新，重复名称或类型漂移时失败关闭。
+- 排序请求必须保留飞书固定的“消息”标签，并将人生核心议题放在第一个自定义位置；排序后重新 `list_tabs` 读回校验。失败不删除已有标签，下一次运行可重试。
 
 ### 链接格式约定
 

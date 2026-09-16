@@ -9,10 +9,10 @@ import { processGroup } from "./lib/commands/update.js";
 import { assertSkillUsageForApply, attachModelSkillDescriptions, normalizeSkillUsage, rankSkills, scopeSkillUsage, topGroup } from "./lib/commands/top.js";
 import { renderList } from "./lib/commands/list.js";
 import { selfTest } from "./lib/commands/self-test.js";
-import { sortChatTabs } from "./lib/link-sync.js";
+import { sortChatTabs, syncManagedChatTab } from "./lib/link-sync.js";
 
 function usage() {
-  console.log("Usage: group-info.mjs update --group <id|name> [--dry-run|--write|--apply] [--skip-if-recent] [--require-fresh] | update-all [--dry-run|--write|--apply] [--skip-if-recent] [--refresh] [--require-fresh] [--skill-usage-file <json>] | top --group <id|name> --dry-run|--apply [--skill-usage-file <json>] [--exclude-group <id|name>] [--require-fresh] | top-all --dry-run|--apply [--skill-usage-file <json>] [--exclude-group <id|name>] [--refresh] [--require-fresh] | list [--format json|md|table] [--refresh] [--with-meta] [--require-fresh] | sort-tabs --group <id|name> [--dry-run|--apply] [--require-fresh] | sort-tabs-all [--dry-run|--apply] [--refresh] [--require-fresh] | self-test");
+  console.log("Usage: group-info.mjs update --group <id|name> [--dry-run|--write|--apply] [--skip-if-recent] [--require-fresh] | update-all [--dry-run|--write|--apply] [--skip-if-recent] [--refresh] [--require-fresh] [--skill-usage-file <json>] | top --group <id|name> --dry-run|--apply [--skill-usage-file <json>] [--exclude-group <id|name>] [--require-fresh] | top-all --dry-run|--apply [--skill-usage-file <json>] [--exclude-group <id|name>] [--refresh] [--require-fresh] | list [--format json|md|table] [--refresh] [--with-meta] [--require-fresh] | sort-tabs --group <id|name> [--dry-run|--apply] [--require-fresh] | sync-tab --group <id|name> --name <name> --url <url> [--type doc|url] [--dry-run|--apply] [--require-fresh] | sort-tabs-all [--dry-run|--apply] [--refresh] [--require-fresh] | self-test");
 }
 
 function parseArgs(argv) {
@@ -21,6 +21,9 @@ function parseArgs(argv) {
     const arg = argv[i];
     if (arg === "--dry-run" || arg === "--write" || arg === "--apply") args.mode = arg.slice(2);
     else if (arg === "--group") args.group = argv[++i];
+    else if (arg === "--name") args.name = argv[++i];
+    else if (arg === "--url") args.url = argv[++i];
+    else if (arg === "--type") args.type = argv[++i];
     else if (arg === "--skip-if-recent") args.skipIfRecent = true;
     else if (arg === "--refresh") args.refresh = true;
     else if (arg === "--with-meta") args.withMeta = true;
@@ -103,6 +106,18 @@ if (args.invalidSkillUsageFile) {
 }
 if (args.invalidExcludeGroup) {
   console.error("--exclude-group 必须提供群组 ID 或名称");
+  process.exit(2);
+}
+if (args.command === "sync-tab" && (!args.group || !args.name || !args.url)) {
+  console.error("sync-tab 必须提供 --group、--name 和 --url");
+  process.exit(2);
+}
+if (args.command === "sync-tab" && normalizeGroupName(args.group) !== "learn-x") {
+  console.error("sync-tab 仅允许操作 learn-x 群");
+  process.exit(2);
+}
+if (args.command === "sync-tab" && args.type && !["doc", "url"].includes(args.type)) {
+  console.error("sync-tab --type 只能是 doc 或 url");
   process.exit(2);
 }
 if (args.mode === "apply" && ["top", "top-all", "update-all"].includes(args.command)) {
@@ -189,6 +204,31 @@ if (args.skillUsageFile) {
 
 if (args.command === "list") {
   console.log(renderList(registry, args.format, args));
+} else if (args.command === "sync-tab") {
+  if (!groups.length) {
+    console.error("未在群注册表中记录");
+    process.exit(2);
+  }
+  for (const group of groups) {
+    if (!group.chat_id) {
+      failures.push({ group: group.name, command: "sync-tab", error: "无 chat_id" });
+      continue;
+    }
+    try {
+      const result = syncManagedChatTab({
+        chatId: group.chat_id,
+        name: args.name,
+        url: args.url,
+        type: args.type || "doc",
+        mode: args.mode,
+      });
+      if (args.format === "json") console.log(JSON.stringify({ group: group.name, ...result }));
+      else console.log(`${group.name}: ${args.mode === "dry-run" ? "dry-run" : "已同步"} ${args.name} → ${args.url}`);
+    } catch (e) {
+      failures.push({ group: group.name, command: "sync-tab", error: e.message });
+      console.error(`${group.name}: 标签同步失败：${e.message}`);
+    }
+  }
 } else if (args.command === "top" || args.command === "top-all") {
   for (const group of groups) {
     try {

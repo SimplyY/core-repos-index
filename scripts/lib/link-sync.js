@@ -467,7 +467,13 @@ export function syncLinksToChatTabs(group, links, mode, existingTabs = null) {
 
   // 只有新增/更新全部成功后才排序；失败后停止后续外部写入。
   if (mode === "apply" && errors.length === 0) {
-    if (!sortChatTabs(chatId)) errors.push("排序标签页失败");
+    let priorityTabId = null;
+    if (group.name === "learn-x" || group.group_name === "learn-x") {
+      priorityTabId = existingTabs?.find((tab) => tab.tab_name === "人生核心议题")?.tab_id
+        || fetchChatTabs(chatId).find((tab) => tab.tab_name === "人生核心议题")?.tab_id
+        || null;
+    }
+    if (!sortChatTabs(chatId, { priorityTabId })) errors.push("排序标签页失败");
     if (errors.length === 0) {
       try {
         const readback = verifyChatTabs(fetchChatTabs(chatId), links);
@@ -516,13 +522,82 @@ function dedupeChatTabs(chatId) {
 }
 
 /**
- * 排序群标签页。规则：消息 → 非 GitHub 链接 → 系统标签（文件/图片/公告/云文档等）→ GitHub 链接（最后）。
+ * 排序群标签页。默认规则：消息 → 非 GitHub 链接 → 系统标签（文件/图片/公告/云文档等）→ GitHub 链接（最后）。
+ * 传入 priorityTabId 时保留消息首位，并将指定标签放到第一个自定义位置。
  * 自动从所有标签页中识别 doc/url 类型为链接标签页，无需外部传参。
  * 非链接的系统标签页保持原有相对顺序。
  */
-export function sortChatTabs(chatId) {
+export function orderChatTabIds(tabs, priorityTabId = null) {
+  const allTabs = Array.isArray(tabs) ? tabs : [];
+  const seen = new Set();
+  const push = (id, ids) => {
+    if (id && !seen.has(id)) { seen.add(id); ids.push(id); }
+  };
+  const messageTab = allTabs.find((t) => t.tab_type === "message");
+  const ids = [];
+  push(messageTab?.tab_id, ids);
+  push(priorityTabId, ids);
+  for (const tab of allTabs) push(tab.tab_id, ids);
+  return ids;
+}
+
+/**
+ * 管理一个不属于 README/Base 的受控标签页（例如 learn-x 的人生核心议题入口）。
+ * 只按名称幂等更新，不执行反向同步，也不删除任何已有标签。
+ */
+export function syncManagedChatTab({ chatId, name, url, type = "doc", mode = "dry-run" }) {
+  if (!chatId) throw new Error("缺少 chat_id");
+  if (!name) throw new Error("缺少标签名称");
+  if (!/^https?:\/\//i.test(url || "")) throw new Error("标签 URL 必须是 http(s) 地址");
+  if (type !== "doc" && type !== "url") throw new Error(`标签类型不支持：${type}`);
+
+  const initial = fetchChatTabs(chatId);
+  const matches = initial.filter((tab) => tab.tab_name === name);
+  if (matches.length > 1) throw new Error(`标签名称重复：${name}`);
+  const existing = matches[0] || null;
+  if (existing && existing.tab_type !== type) {
+    throw new Error(`标签类型漂移：${name} 当前为 ${existing.tab_type}，期望 ${type}`);
+  }
+  const currentUrl = existing?.tab_content?.[existing.tab_type] || "";
+  const action = existing ? (currentUrl === url ? "unchanged" : "updated") : "created";
+  const tabId = existing?.tab_id || null;
+  if (mode === "dry-run") {
+    const ordered = orderChatTabIds(initial, tabId || "pending");
+    return { ok: true, dryRun: true, action, tabId, name, type, url, orderedIds: ordered };
+  }
+
+  if (existing && currentUrl !== url) {
+    if (!updateChatTab(chatId, existing.tab_id, name, url, type)) throw new Error(`更新标签页失败：${name}`);
+  } else if (!existing) {
+    if (!addChatTab(chatId, { tab_name: name, tab_type: type, tab_content: { [type]: url } })) {
+      throw new Error(`添加标签页失败：${name}`);
+    }
+  }
+
+  const afterWrite = fetchChatTabs(chatId);
+  const target = afterWrite.filter((tab) => tab.tab_name === name);
+  if (target.length !== 1) throw new Error(`写入后未找到唯一标签：${name}`);
+  const managed = target[0];
+  if (!sortChatTabs(chatId, { priorityTabId: managed.tab_id, skipDedupe: true })) throw new Error("排序标签页失败");
+  const readback = fetchChatTabs(chatId);
+  const readbackTarget = readback.filter((tab) => tab.tab_name === name);
+  if (readbackTarget.length !== 1) throw new Error(`读回缺少唯一标签：${name}`);
+  const index = readback.findIndex((tab) => tab.tab_id === readbackTarget[0].tab_id);
+  const messageIndex = readback.findIndex((tab) => tab.tab_type === "message");
+  const actualUrl = readbackTarget[0].tab_content?.[readbackTarget[0].tab_type] || "";
+  if (readbackTarget[0].tab_type !== type || actualUrl !== url) throw new Error(`读回标签内容不一致：${name}`);
+  if (messageIndex >= 0 && messageIndex !== 0) throw new Error("读回消息标签未位于第一位");
+  if (index !== (messageIndex >= 0 ? 1 : 0)) throw new Error("读回目标标签未位于第一个自定义位置");
+  const expectedIds = new Set(afterWrite.map((tab) => tab.tab_id));
+  if (expectedIds.size !== afterWrite.length || expectedIds.size !== readback.length || readback.some((tab) => !expectedIds.has(tab.tab_id))) throw new Error("读回标签集合不一致");
+  if (JSON.stringify(readback.map((tab) => tab.tab_id)) !== JSON.stringify(orderChatTabIds(afterWrite, managed.tab_id))) throw new Error("读回标签顺序不一致");
+  if (new Set(readback.map((tab) => tab.tab_id)).size !== readback.length) throw new Error("读回标签存在重复 ID");
+  return { ok: true, dryRun: false, action, tabId: readbackTarget[0].tab_id, name, type, url, orderedIds: readback.map((tab) => tab.tab_id) };
+}
+
+export function sortChatTabs(chatId, { priorityTabId = null, skipDedupe = false } = {}) {
   // 先去除重复标签页
-  if (!dedupeChatTabs(chatId).ok) return false;
+  if (!skipDedupe && !dedupeChatTabs(chatId).ok) return false;
   const allTabs = fetchChatTabs(chatId);
   if (allTabs.length === 0) return true;
 
@@ -542,12 +617,13 @@ export function sortChatTabs(chatId) {
     t.tab_type !== "message" && t.tab_type !== "doc" && t.tab_type !== "url"
   );
 
-  const orderedIds = [
+  let orderedIds = [
     messageTab?.tab_id,
     ...nonGithubLinkTabs.map(t => t.tab_id),
     ...otherTabs.map(t => t.tab_id),
     ...githubTabs.map(t => t.tab_id),
   ].filter(Boolean);
+  if (priorityTabId) orderedIds = orderChatTabIds(allTabs, priorityTabId);
 
   const currentIds = allTabs.map(t => t.tab_id);
   if (JSON.stringify(orderedIds) === JSON.stringify(currentIds)) return true;

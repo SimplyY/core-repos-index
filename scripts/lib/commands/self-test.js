@@ -4,7 +4,7 @@ import { parseLinks, cleanSkillDesc, cleanSkillDescCompleteSentence } from "../u
 import { renderGroupInfo, renderPinSummary, groupInfoChanged, syncAndRenderLinks } from "./update.js";
 import { assertSkillUsageForApply, normalizeSkillUsage, rankSkills, scopeSkillUsage, renderTopNoticeCard, topGroup, topNoticeIdempotencyKey } from "./top.js";
 import { renderList } from "./list.js";
-import { parseChatTabsResponse, syncLinks, syncLinksToBase, syncLinksToChatTabs, verifyChatTabs } from "../link-sync.js";
+import { orderChatTabIds, parseChatTabsResponse, syncLinks, syncLinksToBase, syncLinksToChatTabs, verifyChatTabs } from "../link-sync.js";
 import { runTopRecoveryProbe } from "./self-test-probes.js";
 import { modelSkillDescription, readSkillDescriptions } from "../skill-descriptions.js";
 
@@ -88,6 +88,13 @@ export function selfTest() {
   assertEqual(parseChatTabsResponse(JSON.stringify({ ok: true, data: { chat_tabs: [] } }), "demo").length, 0, "chat tabs response parse");
   assertThrows(() => parseChatTabsResponse(JSON.stringify({ ok: true, data: {} }), "demo"), "chat tabs response must include tabs");
   assertThrows(() => parseChatTabsResponse(JSON.stringify({ ok: "false", data: { chat_tabs: [] } }), "demo"), "chat tabs response requires boolean ok");
+  const orderedProbeTabs = [
+    { tab_id: "doc", tab_type: "doc" },
+    { tab_id: "message", tab_type: "message" },
+    { tab_id: "system", tab_type: "files_resources" },
+  ];
+  assertEqual(orderChatTabIds(orderedProbeTabs, "doc").join(","), "message,doc,system", "priority tab follows message");
+  assertEqual(orderChatTabIds(orderedProbeTabs).join(","), "message,doc,system", "message remains first");
   assertEqual(verifyChatTabs([{ tab_type: "url", tab_name: "probe", tab_content: { url: "https://example.com" } }], [{ name: "probe", url: "https://example.com" }]).ok, true, "chat tab readback accepts matching tab");
   assertEqual(verifyChatTabs([], [{ name: "probe", url: "https://example.com" }]).ok, false, "chat tab readback rejects missing tab");
   const topKey = topNoticeIdempotencyKey({ id: "group-index", chat_id: "oc_demo" }, "summary");

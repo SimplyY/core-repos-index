@@ -128,6 +128,13 @@
       "description_zh_medium": "合并 Learn-X 两端提示词使用记录",
       "description_zh_high": "合并 Learn-X 两端 Chat Pack 提示词使用记录并校验"
     },
+    "learn-x-quarterly-question-overview": {
+      "source_sha256": "d59a753af64f6f70af917a97e5d7ec2927b1b691ed7aeb290ca303139c08efb7",
+      "description_zh": "生成、审计并提交 Learn-X 人生核心议题季度总览，原文存档私有飞书 Wiki",
+      "description_zh_low": "生成并提交季度核心议题总览",
+      "description_zh_medium": "生成、审计并提交季度核心议题总览，原文存档私有 Wiki",
+      "description_zh_high": "生成审计并提交 Learn-X 季度核心议题总览，原文存档私有 Wiki"
+    },
     "learn-x-question-review": {
       "source_sha256": "22a0fc0ce576f7e9cff58c0b17d5e03a7880242448776f1db0733872091a91cb",
       "description_zh": "复盘 Learn-X 长期认知议题，比较增量证据",
@@ -146,6 +153,13 @@
       "source_sha256": "b4950034ac6c3b582c819112a7b1fac389ea5364ae958971b20c090cda7378ab",
       "description_zh": "依据本地周输入与已确认周记生成安全的飞书月记草稿",
       "description_zh_low": "生成安全月记草稿"
+    },
+    "learn-x-periodic-insight": {
+      "source_sha256": "ab189ec23b9913c6f9800f593a94f3b4b15de5967a03f28f83624d927e5e0c19",
+      "description_zh": "按目标周期与历史范围装配本地 Context，预览或经授权调用 ChatGPT，归档到私有飞书知识库",
+      "description_zh_low": "装配周期洞察上下文并归档",
+      "description_zh_medium": "按目标周期装配本地上下文，授权后调用 AI 归档洞察",
+      "description_zh_high": "按周期与历史范围装配本地上下文，预览或授权调用 ChatGPT，归档私有知识库"
     },
     "learn-x-process": {
       "source_sha256": "4f48e865cc53830574742bbb698a0b713c2a53d0a961913885a642944f1bb202",
@@ -235,6 +249,13 @@
       "description_zh": "记录并复核真实使用问题，维护处理、复发与治理闭环",
       "description_zh_low": "复核使用问题并维护治理闭环"
     },
+    "prompt-governance": {
+      "source_sha256": "6260277b05a2de6258a3ef7545093ad5e53831e9646fa642a4bd15d1bfbaded2",
+      "description_zh": "统一读取和维护受治理 Prompt 的身份、飞书真源与版本证据，不负责内容评测",
+      "description_zh_low": "维护受治理 Prompt 与版本证据",
+      "description_zh_medium": "统一维护受治理 Prompt 的身份、真源与版本证据",
+      "description_zh_high": "统一读取和维护受治理 Prompt 的身份、飞书真源、本地副本与版本证据"
+    },
     "quick-cd": {
       "source_sha256": "671bc57a63d8350fbe0bb7750d63b58d02474c2e4f1a709bff9b320d97713be9",
       "description_zh": "按短名切换已注册仓库",
@@ -245,7 +266,7 @@
       "description_zh": "评审新需求时整理上下文并生成多轮评估协议",
       "description_zh_low": "整理需求上下文生成评估协议",
       "description_zh_medium": "评审新需求时整理上下文并生成多轮评估协议",
-      "description_zh_high": "整理长期、产品与工程上下文，提出方向决策问题，并生成给 ChatGPT 初评优化与复评协议"
+      "description_zh_high": "整理长期、产品与工程上下文，提方向决策问题，生成 ChatGPT 初评复评协议"
     },
     "reading-club-thinking": {
       "source_sha256": "1dacd1db3d396ee8cb09bf293a89d920b073664016b5e1998f420d03e7853b84",
@@ -358,18 +379,18 @@
       "description_zh_high": "依据近期需求从 SkillHub 严谨筛选 5–10 个个性化 Skill 推荐"
     },
     "learn-x-monthly-question-workbench": {
-      "source_sha256": "644a0db17b0e0f0f9008144dcec2bf5ae0c2e93425da81570d28285476b27495",
-      "description_zh": "运行 Learn-X 月度核心议题研究工作台并创建研究文档",
-      "description_zh_low": "运行月度核心议题研究工作台",
-      "description_zh_medium": "运行 Learn-X 月度核心议题研究工作台并创建研究文档",
-      "description_zh_high": "运行 Learn-X 月度核心议题研究工作台：推荐选题、创建研究文档、解析明确变化、审计回写与撤回"
+      "source_sha256": "48a0ab00eb534c0d0c31304e143dee4ad1c3d8ee76b052b2f9784a6d86781e12",
+      "description_zh": "运行 Learn-X 月度议题研究工作台：推荐选题、创建研究文档、解析变化、审计回写撤回",
+      "description_zh_low": "运行月度议题研究工作台",
+      "description_zh_medium": "运行 Learn-X 月度议题研究工作台并创建研究文档",
+      "description_zh_high": "运行月度议题研究工作台：推荐选题、创建研究文档、解析变化、审计回写撤回"
     },
     "dsh-testing": {
       "source_sha256": "b51bb52a8985a3c10db45d07db0db1522010ba8fd086330cbb4cb89bb190dcb8",
       "description_zh": "功能开发完成后生成独立自测任务包",
       "description_zh_low": "生成功能自测交接任务包",
       "description_zh_medium": "功能开发完成后生成独立自测任务包",
-      "description_zh_high": "结合当前会话与真实仓库 diff，生成可复制给新 Coding Agent 的独立自测任务包"
+      "description_zh_high": "结合当前会话与仓库 diff，生成可复制给新 Agent 的独立自测任务包"
     }
   }
 }

@@ -241,11 +241,11 @@
       "description_zh_high": "按模糊短名切换已注册仓库并确认路径"
     },
     "requirement-evaluator": {
-      "source_sha256": "770bd8a55daa4d8a99c734148f7c3f255955520baaca789f1538e0e22201d8c3",
-      "description_zh": "组装需求评估上下文，生成深度评估 Prompt",
-      "description_zh_low": "组装需求评估上下文",
-      "description_zh_medium": "组装需求评估上下文并生成深度评估 Prompt",
-      "description_zh_high": "组装最少但会改变判断的需求事实与未知项，生成深度评估 Prompt"
+      "source_sha256": "0dc151ae5a23333a9b86a5121870205d1a9e3898efbd66562ab57adb28567d6c",
+      "description_zh": "评审新需求时整理上下文并生成多轮评估协议",
+      "description_zh_low": "整理需求上下文生成评估协议",
+      "description_zh_medium": "评审新需求时整理上下文并生成多轮评估协议",
+      "description_zh_high": "整理长期、产品与工程上下文，提出方向决策问题，并生成给 ChatGPT 初评优化与复评协议"
     },
     "reading-club-thinking": {
       "source_sha256": "1dacd1db3d396ee8cb09bf293a89d920b073664016b5e1998f420d03e7853b84",
@@ -356,6 +356,20 @@
       "description_zh": "根据近期需求从 SkillHub 筛选个性化推荐",
       "description_zh_low": "按近期需求筛选 Skill 推荐",
       "description_zh_high": "依据近期需求从 SkillHub 严谨筛选 5–10 个个性化 Skill 推荐"
+    },
+    "learn-x-monthly-question-workbench": {
+      "source_sha256": "644a0db17b0e0f0f9008144dcec2bf5ae0c2e93425da81570d28285476b27495",
+      "description_zh": "运行 Learn-X 月度核心议题研究工作台并创建研究文档",
+      "description_zh_low": "运行月度核心议题研究工作台",
+      "description_zh_medium": "运行 Learn-X 月度核心议题研究工作台并创建研究文档",
+      "description_zh_high": "运行 Learn-X 月度核心议题研究工作台：推荐选题、创建研究文档、解析明确变化、审计回写与撤回"
+    },
+    "dsh-testing": {
+      "source_sha256": "b51bb52a8985a3c10db45d07db0db1522010ba8fd086330cbb4cb89bb190dcb8",
+      "description_zh": "功能开发完成后生成独立自测任务包",
+      "description_zh_low": "生成功能自测交接任务包",
+      "description_zh_medium": "功能开发完成后生成独立自测任务包",
+      "description_zh_high": "结合当前会话与真实仓库 diff，生成可复制给新 Coding Agent 的独立自测任务包"
     }
   }
 }

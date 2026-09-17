@@ -41,6 +41,13 @@
       "description_zh": "匿名评估文章质量，隔离计算个人相关性并确定精读路由",
       "description_zh_low": "评估文章质量并确定精读路由"
     },
+    "codex-memory": {
+      "source_sha256": "a0703008b4c2935afb741f01c81415a8a06d22f97fbd971d446ef044d66a5cd5",
+      "description_zh": "DSH 共享记忆库(蒸馏自 Codex 记忆)。当任务涉及 learn-x / lark-channel-bridge / time-x / invest-* / read-x / voice-x / poem-x / group-index / skills 等仓库的背景、历史决策、\"上次怎么修的\"、用户既有偏好与执行边界时,先读本技能目录下的 memory.md;用户说\"同步 codex 记忆 / 刷新 codex 记忆\"时执行其中的增量同步流程。来源 ~/.codex/memories/,月度由 launchd 自动同步。",
+      "description_zh_low": "读取共享记忆库并同步记忆",
+      "description_zh_medium": "读取 DSH 共享记忆库，按流程增量同步",
+      "description_zh_high": "读取 DSH 共享记忆库，按增量同步流程更新 Codex 记忆"
+    },
     "create-agents-md": {
       "source_sha256": "1ab9e27b55b14bb7fe361f7e5f8d6ce42dcf2335648d689ed15e9adaf5ae900a",
       "description_zh": "为仓库生成或更新 AGENTS.md，明确入口、边界与验证",
@@ -113,6 +120,13 @@
       "source_sha256": "b309904b9b8e15628e3d2921e08d0ebed6e94e6b19df202d3b58d939d2e7bde3",
       "description_zh": "生成投资复盘事实底稿，组织两阶段证据审查，不输出交易指令",
       "description_zh_low": "生成投资复盘底稿并审查证据"
+    },
+    "learn-x-deep-research": {
+      "source_sha256": "19dbd4d8e15bd92b9041775dd3046ac610e1c55ef7ef8c54c68b1bd422bdbe75",
+      "description_zh": "为 Learn-X 一键发起深度研究：创建深度研究 Wiki 文档、注入议题上下文并组装 ChatGPT 研究包",
+      "description_zh_low": "一键发起 Learn-X 深度研究",
+      "description_zh_medium": "为 Learn-X 发起研究并组装 ChatGPT 研究包",
+      "description_zh_high": "为 Learn-X 研究：建 Wiki 文档、注议题、组装 ChatGPT 包"
     },
     "learn-x-input": {
       "source_sha256": "f2379b2f48aba0ed134769cddf922120ee86831b7d8d23dda484dba0a0366e34",
@@ -262,11 +276,11 @@
       "description_zh_high": "按模糊短名切换已注册仓库并确认路径"
     },
     "requirement-evaluator": {
-      "source_sha256": "0dc151ae5a23333a9b86a5121870205d1a9e3898efbd66562ab57adb28567d6c",
-      "description_zh": "评审新需求时整理上下文并生成多轮评估协议",
-      "description_zh_low": "整理需求上下文生成评估协议",
-      "description_zh_medium": "评审新需求时整理上下文并生成多轮评估协议",
-      "description_zh_high": "整理长期、产品与工程上下文，提方向决策问题，生成 ChatGPT 初评复评协议"
+      "source_sha256": "c7c56347e73d3bfced87c2be94b5b4f3381cbad5686e6faf5722d617d7bb431e",
+      "description_zh": "整理需求上下文与证据，组装可直接粘贴给 ChatGPT 的需求评审提示词",
+      "description_zh_low": "整理需求上下文组装评审提示词",
+      "description_zh_medium": "整理需求上下文与证据，组装可给 ChatGPT 的评审提示词",
+      "description_zh_high": "整理需求上下文与证据，组装可直接粘贴给 ChatGPT 的完整评审提示词"
     },
     "reading-club-thinking": {
       "source_sha256": "1dacd1db3d396ee8cb09bf293a89d920b073664016b5e1998f420d03e7853b84",

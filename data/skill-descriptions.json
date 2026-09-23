@@ -122,11 +122,11 @@
       "description_zh_low": "生成投资复盘底稿并审查证据"
     },
     "learn-x-deep-research": {
-      "source_sha256": "19dbd4d8e15bd92b9041775dd3046ac610e1c55ef7ef8c54c68b1bd422bdbe75",
-      "description_zh": "为 Learn-X 一键发起深度研究：创建深度研究 Wiki 文档、注入议题上下文并组装 ChatGPT 研究包",
+      "source_sha256": "9085f9f9701c3abeb8e22585ce27fec0bdbe350326883966943950fbc288220b",
+      "description_zh": "为 Learn-X 一键发起深度研究：创建深度研究 Wiki 文档、注入模板与议题上下文、维护年度索引并组装上下文包；Base 零写入",
       "description_zh_low": "一键发起 Learn-X 深度研究",
-      "description_zh_medium": "为 Learn-X 发起研究并组装 ChatGPT 研究包",
-      "description_zh_high": "为 Learn-X 研究：建 Wiki 文档、注议题、组装 ChatGPT 包"
+      "description_zh_medium": "为 Learn-X 发起深度研究并组装上下文包",
+      "description_zh_high": "为 Learn-X 研究：建 Wiki 文档、注议题、组装上下文包"
     },
     "learn-x-input": {
       "source_sha256": "f2379b2f48aba0ed134769cddf922120ee86831b7d8d23dda484dba0a0366e34",
@@ -169,11 +169,11 @@
       "description_zh_low": "生成安全月记草稿"
     },
     "learn-x-periodic-insight": {
-      "source_sha256": "ab189ec23b9913c6f9800f593a94f3b4b15de5967a03f28f83624d927e5e0c19",
-      "description_zh": "按目标周期与历史范围装配本地 Context，预览或经授权调用 ChatGPT，归档到私有飞书知识库",
+      "source_sha256": "246430b6fd9734b34da5935f4eabc7ab0562a11b7e6346bbe9919a1d9c0c5f98",
+      "description_zh": "Learn-X 周期洞察：按目标周期与历史范围装配本地上下文，预览或经授权调用 AI，可恢复归档到私有飞书知识库",
       "description_zh_low": "装配周期洞察上下文并归档",
       "description_zh_medium": "按目标周期装配本地上下文，授权后调用 AI 归档洞察",
-      "description_zh_high": "按周期与历史范围装配本地上下文，预览或授权调用 ChatGPT，归档私有知识库"
+      "description_zh_high": "按周期与历史范围装配本地上下文，预览或授权调用 AI，归档私有飞书知识库"
     },
     "learn-x-process": {
       "source_sha256": "4f48e865cc53830574742bbb698a0b713c2a53d0a961913885a642944f1bb202",
@@ -276,11 +276,11 @@
       "description_zh_high": "按模糊短名切换已注册仓库并确认路径"
     },
     "requirement-evaluator": {
-      "source_sha256": "c7c56347e73d3bfced87c2be94b5b4f3381cbad5686e6faf5722d617d7bb431e",
-      "description_zh": "整理需求上下文与证据，组装可直接粘贴给 ChatGPT 的需求评审提示词",
+      "source_sha256": "f157c22d4d0f0d9c1d983c7788bc824cca4581e46075b861200e5ffad9a36cfe",
+      "description_zh": "需求评审交接：Codex 调查并保留核心上下文与证据，组装可直接粘贴给 ChatGPT 的需求评审提示词；不输出第一轮结论，不生成技术方案",
       "description_zh_low": "整理需求上下文组装评审提示词",
       "description_zh_medium": "整理需求上下文与证据，组装可给 ChatGPT 的评审提示词",
-      "description_zh_high": "整理需求上下文与证据，组装可直接粘贴给 ChatGPT 的完整评审提示词"
+      "description_zh_high": "调查并保留核心上下文与证据，组装给 ChatGPT 的评审提示词"
     },
     "reading-club-thinking": {
       "source_sha256": "1dacd1db3d396ee8cb09bf293a89d920b073664016b5e1998f420d03e7853b84",
@@ -400,11 +400,18 @@
       "description_zh_high": "运行月度议题研究工作台：推荐选题、创建研究文档、解析变化、审计回写撤回"
     },
     "dsh-testing": {
-      "source_sha256": "b51bb52a8985a3c10db45d07db0db1522010ba8fd086330cbb4cb89bb190dcb8",
-      "description_zh": "功能开发完成后生成独立自测任务包",
-      "description_zh_low": "生成功能自测交接任务包",
-      "description_zh_medium": "功能开发完成后生成独立自测任务包",
-      "description_zh_high": "结合当前会话与仓库 diff，生成可复制给新 Agent 的独立自测任务包"
+      "source_sha256": "1ec095f298a15ff184778cc6a2de0b152f64f161ba62767815133e9b2cb0b369",
+      "description_zh": "功能自测交接：开发完成后结合当前会话与真实仓库 diff，生成可复制给新 Agent 的独立深度自测任务包",
+      "description_zh_low": "生成独立深度自测任务包",
+      "description_zh_medium": "开发完成后生成可交接的深度自测任务包",
+      "description_zh_high": "结合当前会话与真实仓库 diff，生成给新 Agent 的深度自测包"
+    },
+    "tech-arch-planning": {
+      "source_sha256": "336b1ec632a3ce018571eb475eb37b7101f263e2de61f393200b1acdbcf6bcd0",
+      "description_zh": "完整技术架构与技术规划：仅在明确要求或冻结需求门控时使用，轻量规划留在现有流程",
+      "description_zh_low": "生成完整技术架构规划",
+      "description_zh_medium": "仅在完整架构与规划门控时生成技术方案",
+      "description_zh_high": "仅在明确要求完整技术架构或冻结需求门控时使用，轻量规划留在现有流程"
     }
   }
 }

@@ -7,8 +7,9 @@ const descriptionsPath = join(fileURLToPath(new URL("../../data/skill-descriptio
 let cache;
 
 function sourceHash(skill) {
+  const source = skill.description_zh || skill.description || skill.purpose || "";
   return createHash("sha256")
-    .update(String(skill.description_zh || skill.description || ""))
+    .update(String(source))
     .digest("hex");
 }
 

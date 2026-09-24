@@ -319,7 +319,7 @@
       "description_zh_low": "管理随时记与日历素材"
     },
     "voice-x": {
-      "source_sha256": "3e7e2a45f183d9d9f45070521ce352468b381587642b8e89f18e81135c57c88c",
+    "source_sha256": "b5e652c1e06f6750be1e9ab05cca6b58bb7e02926313d34b859984544614d697",
       "description_zh": "分阶段处理语音转写，生成原文、总结与洞察并支持幂等归档",
       "description_zh_low": "处理语音并归档总结洞察"
     },

@@ -244,9 +244,9 @@
       "description_zh_low": "创建项目仓库及文档并回填索引"
     },
     "people-intelligence": {
-      "source_sha256": "2d185c14d0b907c072b6338bb67785774f5ba241fcb09e92bc26d651db2179ea",
-      "description_zh": "按时间范围检索人物情报与来源，输出可核验分级结果",
-      "description_zh_low": "检索人物情报并输出分级结果"
+      "source_sha256": "e1087f3c019bf6333d68aec29a9e026a31f3db96a0cd7b6f4025a658862cde63",
+      "description_zh": "从大脑情报系统检索人物观点与来源，输出分级情报",
+      "description_zh_low": "检索人物观点与来源"
     },
     "play-x": {
       "source_sha256": "e0ae1dde91fa0446da5638806cc2d83e366688611ed82b5041680a749da6e38b",
@@ -319,9 +319,9 @@
       "description_zh_low": "管理随时记与日历素材"
     },
     "voice-x": {
-    "source_sha256": "b5e652c1e06f6750be1e9ab05cca6b58bb7e02926313d34b859984544614d697",
-      "description_zh": "分阶段处理语音转写，生成原文、总结与洞察并支持幂等归档",
-      "description_zh_low": "处理语音并归档总结洞察"
+    "source_sha256": "239b9bdd7807fb3368683723f14993cafdf62ef514f836766d6a4a03c939c00f",
+      "description_zh": "处理语音转写，生成总结洞察并归档",
+      "description_zh_low": "处理语音转写并归档"
     },
     "wechat-weekly-input": {
       "source_sha256": "1e8ead66c1921e6dcb73531e45ee1f21004ee377523505e89a3fb11a51596d23",
@@ -412,6 +412,11 @@
       "description_zh_low": "生成完整技术架构规划",
       "description_zh_medium": "仅在完整架构与规划门控时生成技术方案",
       "description_zh_high": "仅在明确要求完整技术架构或冻结需求门控时使用，轻量规划留在现有流程"
+    },
+    "monthly-note": {
+      "source_sha256": "c6f91b5926dd5f0d5bd8f048eb5a915d6fc6b2d0a5a58b1abe3bf257e05d9536",
+      "description_zh": "投资月记月度闭环：生成证据包与上下文，定稿后发布",
+      "description_zh_low": "生成投资月记证据包与上下文"
     }
   }
 }
